@@ -1,19 +1,30 @@
 package main
 
 import (
+	"time"
+
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
 type Incident struct {
-	gorm.Model
+	ID         string       `gorm:"primaryKey"`
+	CreatedAt  time.Time    `json:"createdAt"`
 	Title      string       `json:"title"`
-	Components []*Component `gorm:"many2many:incident_component;" json:"components"`
+	Components []*Component `gorm:"many2many:incident_component;" json:"components,omitempty"`
+	Updates    []*Update    `json:"updates,omitempty"`
+}
+
+func (i *Incident) BeforeCreate(tx *gorm.DB) error {
+	i.ID = uuid.NewString()
+	i.CreatedAt = time.Now()
+	return nil
 }
 
 func incidentGet(c echo.Context) error {
-	var incident Incident
-	err := db.First(&incident, c.Param("id")).Error
+	incident := &Incident{ID: c.Param("id")}
+	err := db.Preload("Components").Preload("Updates").Take(&incident).Error
 	switch err {
 	case nil:
 		return c.JSON(200, incident)

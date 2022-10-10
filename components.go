@@ -9,9 +9,8 @@ import (
 )
 
 type Component struct {
-	gorm.Model
 	Slug      string      `gorm:"primaryKey" json:"slug"`
-	Incidents []*Incident `gorm:"many2many:incident_component;" json:"incidents"`
+	Incidents []*Incident `gorm:"many2many:incident_component;" json:"incidents,omitempty"`
 }
 
 func loadComponents(filename string) error {
@@ -55,7 +54,7 @@ func componentList(c echo.Context) error {
 
 func componentGet(c echo.Context) error {
 	out := &Component{Slug: c.Param("slug")}
-	err := db.Take(&out).Error
+	err := db.Preload("Incidents").Take(&out).Error
 	switch err {
 	case nil:
 		return c.JSON(200, out)
