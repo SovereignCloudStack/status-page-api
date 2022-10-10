@@ -21,14 +21,22 @@ func main() {
 	components := e.Group("/components")
 	{
 		components.GET("", componentList)
-		components.GET("/:id", componentGet)
+		components.GET("/:slug", componentGet)
 	}
 
 	incidents := e.Group("/incidents")
 	{
 		incidents.GET("", incidentList)
 		incidents.POST("", incidentAdd)
-		incidents.GET("/:id", incidentGet)
+		incident := incidents.Group("/:id")
+		{
+			incident.GET("", incidentGet)
+			updates := incident.Group("/updates")
+			{
+				updates.POST("", updateAdd)
+			}
+		}
+
 	}
 
 	// Reading config
@@ -41,8 +49,7 @@ func main() {
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-	db.AutoMigrate(&Incident{})
-	db.AutoMigrate(&Component{})
+	db.AutoMigrate(&Incident{}, &Component{}, &Update{})
 
 	err = loadComponents(*componentsFile)
 	if err != nil {
