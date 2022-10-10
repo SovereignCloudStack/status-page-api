@@ -6,6 +6,8 @@ import (
 	"os"
 )
 
+var components map[string]string
+
 func loadComponents(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -15,12 +17,14 @@ func loadComponents(filename string) error {
 	return yaml.NewDecoder(file).Decode(&components)
 }
 
-var components map[string]string
-
 func componentList(c echo.Context) error {
 	return c.JSON(200, components)
 }
 
 func componentGet(c echo.Context) error {
-	return c.JSON(200, components[c.Param("id")])
+	component, ok := components[c.Param("id")]
+	if !ok {
+		return c.JSON(404, nil)
+	}
+	return c.JSON(200, component)
 }
