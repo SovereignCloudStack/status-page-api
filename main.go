@@ -36,16 +36,18 @@ func main() {
 	componentsFile := flag.String("components-file", "./components.yaml", "YAML file containing components")
 	addr := flag.String("addr", ":3000", "Address to listen on")
 	flag.Parse()
-	err := loadComponents(*componentsFile)
-	if err != nil {
-		e.Logger.Fatal(err)
-	}
-
+	var err error
 	db, err = gorm.Open(postgres.Open(*dbDsn), &gorm.Config{})
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 	db.AutoMigrate(&Incident{})
+	db.AutoMigrate(&Component{})
+
+	err = loadComponents(*componentsFile)
+	if err != nil {
+		e.Logger.Fatal(err)
+	}
 
 	// Starting server
 	e.Logger.Fatal(e.Start(*addr))

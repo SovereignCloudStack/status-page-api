@@ -7,7 +7,8 @@ import (
 
 type Incident struct {
 	gorm.Model
-	Title string `json:"title"`
+	Title      string       `json:"title"`
+	Components []*Component `gorm:"many2many:incident_component;" json:"components"`
 }
 
 func incidentGet(c echo.Context) error {
