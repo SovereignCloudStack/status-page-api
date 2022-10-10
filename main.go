@@ -34,6 +34,7 @@ func main() {
 			updates := incident.Group("/updates")
 			{
 				updates.POST("", updateAdd)
+				updates.GET("", updatesGet)
 			}
 		}
 

@@ -22,7 +22,15 @@ func (u *Update) BeforeCreate(tx *gorm.DB) error {
 }
 
 func updatesGet(c echo.Context) error {
-
+	updates := []Update{}
+	err := db.Where(&Update{IncidentID: c.Param("id")}).Find(&updates).Error
+	switch err {
+	case nil:
+		return c.JSON(200, updates)
+	default:
+		c.Logger().Error(err)
+		return c.JSON(500, nil)
+	}
 }
 
 func updateAdd(c echo.Context) error {
