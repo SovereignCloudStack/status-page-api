@@ -1,12 +1,18 @@
 package main
 
 import (
+	"os"
+
 	"github.com/labstack/echo/v4"
 	"gopkg.in/yaml.v3"
-	"os"
+	"gorm.io/gorm"
 )
 
-var components map[string]string
+type Component struct {
+	gorm.Model
+	Slug      string      `gorm:"primaryKey" json:"slug"`
+	Incidents []*Incident `gorm:"many2many:incident_component;" json:"incidents"`
+}
 
 func loadComponents(filename string) error {
 	file, err := os.Open(filename)
@@ -14,17 +20,49 @@ func loadComponents(filename string) error {
 		return err
 	}
 	defer file.Close()
-	return yaml.NewDecoder(file).Decode(&components)
+	configComponents := []Component{}
+	err = yaml.NewDecoder(file).Decode(&configComponents)
+	if err != nil {
+		return err
+	}
+	for _, configComponent := range configComponents {
+		err = db.Take(&configComponent).Error
+		switch err {
+		case gorm.ErrRecordNotFound:
+			saveErr := db.Save(&configComponent).Error
+			if saveErr != nil {
+				return saveErr
+			}
+		case nil:
+		default:
+			return err
+		}
+	}
+	return nil
 }
 
 func componentList(c echo.Context) error {
-	return c.JSON(200, components)
+	out := []*Component{}
+	err := db.Find(&out).Error
+	switch err {
+	case nil:
+		return c.JSON(200, out)
+	default:
+		c.Logger().Error(err)
+		return c.JSON(500, nil)
+	}
 }
 
 func componentGet(c echo.Context) error {
-	component, ok := components[c.Param("id")]
-	if !ok {
+	out := &Component{Slug: c.Param("slug")}
+	err := db.Take(&out).Error
+	switch err {
+	case nil:
+		return c.JSON(200, out)
+	case gorm.ErrRecordNotFound:
 		return c.JSON(404, nil)
+	default:
+		c.Logger().Error(err)
+		return c.JSON(500, nil)
 	}
-	return c.JSON(200, component)
 }
