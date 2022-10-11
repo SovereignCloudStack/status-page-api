@@ -45,7 +45,7 @@ func updateAdd(c echo.Context) error {
 	case nil:
 		return c.JSON(200, newUpdate)
 	default:
-		c.Error(err)
+		c.Logger().Error(err)
 		return c.JSON(500, nil)
 	}
 }
