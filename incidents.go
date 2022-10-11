@@ -31,7 +31,7 @@ func incidentGet(c echo.Context) error {
 	case gorm.ErrRecordNotFound:
 		return c.JSON(404, nil)
 	default:
-		c.Error(err)
+		c.Logger().Error(err)
 		return c.JSON(500, nil)
 	}
 }
@@ -43,7 +43,7 @@ func incidentList(c echo.Context) error {
 	case nil:
 		return c.JSON(200, incidents)
 	default:
-		c.Error(err)
+		c.Logger().Error(err)
 		return c.JSON(500, nil)
 	}
 }
@@ -60,7 +60,7 @@ func incidentAdd(c echo.Context) error {
 	case nil:
 		return c.JSON(200, newIncident)
 	default:
-		c.Error(err)
+		c.Logger().Error(err)
 		return c.JSON(500, nil)
 	}
 }
