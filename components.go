@@ -48,7 +48,7 @@ func componentList(c echo.Context) error {
 		return c.JSON(200, out)
 	default:
 		c.Logger().Error(err)
-		return c.JSON(500, nil)
+		return echo.NewHTTPError(500)
 	}
 }
 
@@ -59,9 +59,9 @@ func componentGet(c echo.Context) error {
 	case nil:
 		return c.JSON(200, out)
 	case gorm.ErrRecordNotFound:
-		return c.JSON(404, nil)
+		return echo.NewHTTPError(404)
 	default:
 		c.Logger().Error(err)
-		return c.JSON(500, nil)
+		return echo.NewHTTPError(500)
 	}
 }

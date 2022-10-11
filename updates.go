@@ -29,7 +29,7 @@ func updatesGet(c echo.Context) error {
 		return c.JSON(200, updates)
 	default:
 		c.Logger().Error(err)
-		return c.JSON(500, nil)
+		return echo.NewHTTPError(500)
 	}
 }
 
@@ -38,7 +38,7 @@ func updateAdd(c echo.Context) error {
 	err := c.Bind(&newUpdate)
 	if err != nil {
 		c.Logger().Error(err)
-		return c.JSON(400, nil)
+		return echo.NewHTTPError(400)
 	}
 	err = db.Create(&newUpdate).Error
 	switch err {
@@ -46,6 +46,6 @@ func updateAdd(c echo.Context) error {
 		return c.JSON(200, newUpdate)
 	default:
 		c.Logger().Error(err)
-		return c.JSON(500, nil)
+		return echo.NewHTTPError(500)
 	}
 }
