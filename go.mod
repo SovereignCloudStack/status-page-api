@@ -1,8 +1,9 @@
-module github.com/SovereignCloudStack/statuspage-api
+module github.com/SovereignCloudStack/status-page-api
 
 go 1.18
 
 require (
+	github.com/google/uuid v1.3.0
 	github.com/labstack/echo/v4 v4.9.0
 	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/postgres v1.4.1
@@ -11,7 +12,6 @@ require (
 
 require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.13.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
