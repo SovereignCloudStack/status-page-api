@@ -34,12 +34,13 @@ func updatesGet(c echo.Context) error {
 }
 
 func updateAdd(c echo.Context) error {
-	newUpdate := Update{IncidentID: c.Param("id")}
+	newUpdate := Update{}
 	err := c.Bind(&newUpdate)
 	if err != nil {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(400)
 	}
+	newUpdate.IncidentID = c.Param("id")
 	err = db.Create(&newUpdate).Error
 	switch err {
 	case nil:
@@ -48,4 +49,24 @@ func updateAdd(c echo.Context) error {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(500)
 	}
+}
+
+func updateUpdate(c echo.Context) error {
+	newUpdate := Update{}
+	err := c.Bind(&newUpdate)
+	if err != nil {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(400)
+	}
+	result := db.Where(
+		&Update{ID: c.Param("updateid"), IncidentID: c.Param("id")},
+	).Select("Content").Updates(newUpdate)
+	if result.Error != nil {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(500)
+	}
+	if result.RowsAffected == 0 {
+		return echo.NewHTTPError(404)
+	}
+	return echo.NewHTTPError(200)
 }
