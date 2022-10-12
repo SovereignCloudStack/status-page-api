@@ -35,6 +35,7 @@ func main() {
 			{
 				updates.POST("", updateAdd)
 				updates.GET("", updatesGet)
+				updates.PATCH("/:updateid", updateUpdate)
 			}
 		}
 
