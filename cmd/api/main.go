@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"log"
+	"os"
 	"strings"
 
 	"github.com/labstack/echo/v4"
@@ -14,12 +16,20 @@ var db *gorm.DB
 
 func main() {
 	// Reading config
-	dbDsn := flag.String("db.dsn", "host=127.0.0.1 user=root dbname=defaultdb port=26257 sslmode=disable", "DB dsn")
+	dbDsn := flag.String("postgres-dsn", "host=127.0.0.1 user=root dbname=defaultdb port=26257 sslmode=disable", "DB dsn")
 	componentsFile := flag.String("components-file", "./components.yaml", "YAML file containing components")
 	addr := flag.String("addr", ":3000", "Address to listen on")
+	jwtSecretFile := flag.String("jwt-secret", "./jwt-secret", "File containing JWT secret")
 	var corsOrigins string
 	flag.StringVar(&corsOrigins, "cors-origins", "127.0.0.1,localhost", "Allowed CORS origins, seperated by ','")
 	flag.Parse()
+
+	// Load JWT secret
+	var err error
+	jwtSecret, err = os.ReadFile(*jwtSecretFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// HTTP setup
 	e := echo.New()
@@ -29,6 +39,8 @@ func main() {
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: strings.Split(corsOrigins, ","),
 	}))
+
+	e.POST("/login", login)
 
 	components := e.Group("/components")
 	{
@@ -54,7 +66,6 @@ func main() {
 	}
 
 	// Setup DB
-	var err error
 	db, err = gorm.Open(postgres.Open(*dbDsn), &gorm.Config{})
 	if err != nil {
 		e.Logger.Fatal(err)
