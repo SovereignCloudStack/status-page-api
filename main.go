@@ -14,7 +14,7 @@ var db *gorm.DB
 
 func main() {
 	// Reading config
-	dbDsn := flag.String("db.dsn", "host=127.0.0.1 user=root dbname=defaultdb port=26257 sslmode=disable", "DB dsn")
+	dbDsn := flag.String("postgres-dsn", "host=127.0.0.1 user=postgres dbname=postgres port=5432 sslmode=disable", "DB dsn")
 	componentsFile := flag.String("components-file", "./components.yaml", "YAML file containing components")
 	addr := flag.String("addr", ":3000", "Address to listen on")
 	var corsOrigins string
