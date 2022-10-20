@@ -15,7 +15,7 @@ var db *gorm.DB
 func main() {
 	// Reading config
 	dbDsn := flag.String("postgres-dsn", "host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable", "DB dsn")
-	componentsFile := flag.String("components-file", "./components.yaml", "YAML file containing components")
+	provisioningFile := flag.String("provisioning-file", "./provisioning.yaml", "YAML file containing components etc. to be provisioned on startup")
 	addr := flag.String("addr", ":3000", "Address to listen on")
 	var corsOrigins string
 	flag.StringVar(&corsOrigins, "cors-origins", "127.0.0.1,localhost", "Allowed CORS origins, seperated by ','")
@@ -62,7 +62,7 @@ func main() {
 	db.AutoMigrate(&Incident{}, &Component{}, &Update{})
 
 	// Initialize "static" DB contents
-	err = loadComponents(*componentsFile)
+	err = provisionResources(*provisioningFile)
 	if err != nil {
 		e.Logger.Fatal(err)
 	}

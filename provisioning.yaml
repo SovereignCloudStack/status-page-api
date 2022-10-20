@@ -1,0 +1,6 @@
+components:
+- slug: Storage
+- slug: Network
+- slug: IdP
+- slug: Postgres
+- slug: MySQL
