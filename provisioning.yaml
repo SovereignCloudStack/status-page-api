@@ -1,6 +1,11 @@
 components:
 - slug: Storage
 - slug: Network
+  tags:
+  - slug: network
 - slug: IdP
 - slug: Postgres
 - slug: MySQL
+impactTypes:
+- slug: performance_degration
+- slug: connectivity_problems
