@@ -26,7 +26,7 @@ func (i *Incident) BeforeCreate(tx *gorm.DB) error {
 
 func incidentGet(c echo.Context) error {
 	incident := &Incident{ID: c.Param("id")}
-	err := db.Preload("Components").Preload("Updates").Take(&incident).Error
+	err := db.Preload("ImpactType").Preload("Components").Preload("Updates").Take(&incident).Error
 	switch err {
 	case nil:
 		return c.JSON(200, incident)
