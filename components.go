@@ -12,9 +12,37 @@ type Component struct {
 	Conditions []string    `gorm:"-" json:"conditions"` // computed field
 }
 
-func componentList(c echo.Context) error {
+func componentLoad(filter interface{}) ([]*Component, error) {
 	out := []*Component{}
-	err := db.Find(&out).Error
+	err := db.Transaction(func(tx *gorm.DB) error {
+		err := tx.Find(&out, filter).Error
+		if err != nil {
+			return err
+		}
+
+		// TODO: Filter out inactive incidents or rewrite this part completely,
+		// offloading matching to database
+		currentIncidents := []*Incident{}
+		err = tx.Preload("Components").Find(&currentIncidents).Error
+		if err != nil {
+			return err
+		}
+		for componentIdx := range out {
+			for incidentIdx := range currentIncidents {
+				for componentInIncidentIdx := range currentIncidents[incidentIdx].Components {
+					if currentIncidents[incidentIdx].Components[componentInIncidentIdx].Slug == out[componentIdx].Slug {
+						out[componentIdx].Conditions = append(out[componentIdx].Conditions, currentIncidents[incidentIdx].ImpactTypeSlug)
+					}
+				}
+			}
+		}
+		return nil
+	})
+	return out, err
+}
+
+func componentList(c echo.Context) error {
+	out, err := componentLoad([]string{})
 	switch err {
 	case nil:
 		return c.JSON(200, out)
@@ -25,22 +53,10 @@ func componentList(c echo.Context) error {
 }
 
 func componentGet(c echo.Context) error {
-	out := &Component{Slug: c.Param("slug")}
-	err := db.Transaction(func(tx *gorm.DB) error {
-		err := tx.Take(&out).Error
-		if err != nil {
-			return err
-		}
-		currentIncidents := []*Incident{}
-		err = tx.Where(&Incident{Components: []*Component{out}}).Find(&currentIncidents).Error
-		if err != nil {
-			return err
-		}
-		for _, incident := range currentIncidents {
-			out.Conditions = append(out.Conditions, incident.ImpactTypeSlug)
-		}
-		return nil
-	})
+	out, err := componentLoad([]string{c.Param("slug")})
+	if len(out) == 0 {
+		return echo.NewHTTPError(404)
+	}
 	switch err {
 	case nil:
 		return c.JSON(200, out)
@@ -59,8 +75,7 @@ func componentQueryByLabels(c echo.Context) error {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(400)
 	}
-	out := []*Component{}
-	err = db.Find(&out, LabelFilter("labels").HasLabels(labels)).Error
+	out, err := componentLoad(LabelFilter("labels").HasLabels(labels))
 	switch err {
 	case nil:
 		return c.JSON(200, out)
