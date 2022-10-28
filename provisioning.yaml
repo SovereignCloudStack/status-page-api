@@ -8,9 +8,13 @@ impactTypes:
 components:
 # Setting high level components
 - slug: Storage
+  labels: {}
 - slug: Network
+  labels: {}
 - slug: IdP
+  labels: {}
 - slug: DBaaS
+  labels: {}
 # alternatively, setting fully qualified low level components
 - slug: hypervisor-00001
   labels:
