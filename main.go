@@ -59,7 +59,7 @@ func main() {
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-	db.AutoMigrate(&Incident{}, &Component{}, &Update{}, &Tag{}, &ImpactType{})
+	db.AutoMigrate(&Incident{}, &Component{}, &Update{}, &ImpactType{})
 
 	// Initialize "static" DB contents
 	err = provisionResources(*provisioningFile)
