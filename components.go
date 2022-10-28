@@ -7,6 +7,7 @@ import (
 
 type Component struct {
 	Slug       string      `gorm:"primaryKey" json:"slug"`
+	Labels     Labels      `gorm:"type:jsonb" json:"labels"`
 	Incidents  []*Incident `gorm:"many2many:incident_component;" json:"incidents,omitempty"`
 	Conditions []string    `gorm:"-" json:"conditions"` // computed field
 }
@@ -40,6 +41,26 @@ func componentGet(c echo.Context) error {
 		}
 		return nil
 	})
+	switch err {
+	case nil:
+		return c.JSON(200, out)
+	case gorm.ErrRecordNotFound:
+		return echo.NewHTTPError(404)
+	default:
+		c.Logger().Error(err)
+		return echo.NewHTTPError(500)
+	}
+}
+
+func componentQueryByLabels(c echo.Context) error {
+	labels := Labels{}
+	err := c.Bind(&labels)
+	if err != nil {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(400)
+	}
+	out := []*Component{}
+	err = db.Find(&out, LabelFilter("labels").HasLabels(labels)).Error
 	switch err {
 	case nil:
 		return c.JSON(200, out)

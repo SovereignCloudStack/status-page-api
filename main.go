@@ -34,6 +34,7 @@ func main() {
 	{
 		components.GET("", componentList)
 		components.GET("/:slug", componentGet)
+		components.GET("/query", componentQueryByLabels)
 	}
 
 	incidents := e.Group("/incidents")

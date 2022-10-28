@@ -1,11 +1,30 @@
-components:
-- slug: Storage
-- slug: Network
-  tags:
-  - slug: network
-- slug: IdP
-- slug: Postgres
-- slug: MySQL
+# Setting types how an incident can impact components
 impactTypes:
 - slug: performance_degration
 - slug: connectivity_problems
+
+# Setting components.
+# Field "slug" must be unique, labels can be used to query for multiple components
+components:
+# Setting high level components
+- slug: Storage
+- slug: Network
+- slug: IdP
+- slug: DBaaS
+# alternatively, setting fully qualified low level components
+- slug: hypervisor-00001
+  labels:
+    region: datacenter-west
+    az: '1'
+- slug: hypervisor-00002
+  labels:
+    region: datacenter-west
+    az: '2'
+- slug: hypervisor-00003
+  labels:
+    region: datacenter-east
+    az: '1'
+- slug: hypervisor-00004
+  labels:
+    region: datacenter-east
+    az: '2'
