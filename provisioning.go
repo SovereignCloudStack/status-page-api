@@ -30,6 +30,7 @@ func provisionResources(filename string) error {
 		}
 	}
 	for _, impactType := range resources.ImpactTypes {
+		impactType.provisioned = true
 		err := db.Save(&impactType).Error
 		if err != nil {
 			return err
