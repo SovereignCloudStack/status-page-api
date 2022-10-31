@@ -37,6 +37,7 @@ func (lfe *LabelFilterExpression) HasLabels(labels map[string]string) *LabelFilt
 	return lfe
 }
 
+// TODO: Review this code
 func (lfe *LabelFilterExpression) Build(builder clause.Builder) {
 	stmt, ok := builder.(*gorm.Statement)
 	if !ok {
