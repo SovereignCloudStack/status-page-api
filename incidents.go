@@ -16,6 +16,8 @@ type Incident struct {
 	Updates        []*Update    `json:"updates,omitempty"`
 	ImpactTypeSlug string       `json:"-"`
 	ImpactType     ImpactType   `gorm:"foreignKey:ImpactTypeSlug" json:"impactType"`
+	PhaseSlug      string       `json:"-"`
+	Phase          *Phase       `gorm:"foreignKey:PhaseSlug" json:"phase"`
 }
 
 func (i *Incident) BeforeCreate(tx *gorm.DB) error {
@@ -26,7 +28,7 @@ func (i *Incident) BeforeCreate(tx *gorm.DB) error {
 
 func incidentGet(c echo.Context) error {
 	incident := &Incident{ID: c.Param("id")}
-	err := db.Preload("ImpactType").Preload("Components").Preload("Updates").Take(&incident).Error
+	err := db.Preload("Phase").Preload("ImpactType").Preload("Components").Preload("Updates").Take(&incident).Error
 	switch err {
 	case nil:
 		return c.JSON(200, incident)
@@ -40,7 +42,7 @@ func incidentGet(c echo.Context) error {
 
 func incidentList(c echo.Context) error {
 	var incidents []Incident
-	err := db.Preload("ImpactType").Find(&incidents).Error
+	err := db.Preload("Phase").Preload("ImpactType").Find(&incidents).Error
 	switch err {
 	case nil:
 		return c.JSON(200, incidents)

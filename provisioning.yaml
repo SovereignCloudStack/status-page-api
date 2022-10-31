@@ -32,3 +32,8 @@ components:
   labels:
     region: datacenter-east
     az: '2'
+
+phases:
+- slug: investigation_ongoing
+- slug: working_on_fix
+- slug: potential_fix_deployed
