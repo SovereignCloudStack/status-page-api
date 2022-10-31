@@ -60,7 +60,7 @@ func main() {
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-	err = db.AutoMigrate(&Incident{}, &Component{}, &Update{}, &ImpactType{})
+	err = db.AutoMigrate(&Incident{}, &Component{}, &Update{}, &ImpactType{}, &Phase{})
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
