@@ -13,7 +13,6 @@ type Incident struct {
 	CreatedAt      time.Time       `json:"createdAt"`
 	Title          string          `json:"title"`
 	Components     []*Component    `gorm:"many2many:incident_component;" json:"components,omitempty"`
-	Updates        []*Update       `json:"updates,omitempty"`
 	ImpactTypeSlug string          `json:"-"`
 	ImpactType     ImpactType      `gorm:"foreignKey:ImpactTypeSlug" json:"impactType"`
 	PhaseSlug      string          `json:"-"`
