@@ -43,5 +43,11 @@ func provisionResources(filename string) error {
 			return err
 		}
 	}
-	return nil
+	// Always provision final state
+	finalPhase := Phase{
+		Slug:        "closed",
+		provisioned: true,
+	}
+	err = db.Save(&finalPhase).Error
+	return err
 }
