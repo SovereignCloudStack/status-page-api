@@ -9,15 +9,16 @@ import (
 )
 
 type Incident struct {
-	ID             string       `gorm:"primaryKey"`
-	CreatedAt      time.Time    `json:"createdAt"`
-	Title          string       `json:"title"`
-	Components     []*Component `gorm:"many2many:incident_component;" json:"components,omitempty"`
-	Updates        []*Update    `json:"updates,omitempty"`
-	ImpactTypeSlug string       `json:"-"`
-	ImpactType     ImpactType   `gorm:"foreignKey:ImpactTypeSlug" json:"impactType"`
-	PhaseSlug      string       `json:"-"`
-	Phase          *Phase       `gorm:"foreignKey:PhaseSlug" json:"phase"`
+	ID             string          `gorm:"primaryKey"`
+	CreatedAt      time.Time       `json:"createdAt"`
+	Title          string          `json:"title"`
+	Components     []*Component    `gorm:"many2many:incident_component;" json:"components,omitempty"`
+	Updates        []*Update       `json:"updates,omitempty"`
+	ImpactTypeSlug string          `json:"-"`
+	ImpactType     ImpactType      `gorm:"foreignKey:ImpactTypeSlug" json:"impactType"`
+	PhaseSlug      string          `json:"-"`
+	Phase          *Phase          `gorm:"foreignKey:PhaseSlug" json:"phase"`
+	History        IncidentHistory `gorm:"type:jsonb" json:"history"`
 }
 
 func (i *Incident) BeforeCreate(tx *gorm.DB) error {
