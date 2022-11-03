@@ -44,12 +44,6 @@ func main() {
 		incident := incidents.Group("/:id")
 		{
 			incident.GET("", incidentGet)
-			updates := incident.Group("/updates")
-			{
-				updates.POST("", updateAdd)
-				updates.GET("", updatesGet)
-				updates.PATCH("/:updateid", updateUpdate)
-			}
 		}
 
 	}
@@ -60,7 +54,7 @@ func main() {
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-	err = db.AutoMigrate(&Incident{}, &Component{}, &Update{}, &ImpactType{}, &Phase{})
+	err = db.AutoMigrate(&Incident{}, &Component{}, &ImpactType{}, &Phase{})
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
