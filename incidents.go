@@ -129,7 +129,7 @@ func incidentUpdate(c echo.Context) error {
 	err = db.Transaction(func(tx *gorm.DB) error {
 		// Get full incident from DB
 		currentIncident := &Incident{ID: newIncident.ID}
-		err = tx.Preload("Phase").Preload("ImpactType").Take(&currentIncident).Error
+		err = tx.Preload("Components").Preload("Phase").Preload("ImpactType").Take(&currentIncident).Error
 		if err != nil {
 			return err
 		}
