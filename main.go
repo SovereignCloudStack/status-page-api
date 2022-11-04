@@ -44,6 +44,7 @@ func main() {
 		incident := incidents.Group("/:id")
 		{
 			incident.GET("", incidentGet)
+			incident.PATCH("", incidentUpdate)
 		}
 
 	}
