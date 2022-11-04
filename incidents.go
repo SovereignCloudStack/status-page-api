@@ -12,7 +12,7 @@ import (
 type Incident struct {
 	IncidentState
 	ID      string          `gorm:"primaryKey"`
-	History IncidentHistory `gorm:"type:jsonb" json:"history"`
+	History IncidentHistory `gorm:"type:jsonb" json:"history,omitempty"`
 }
 
 type IncidentState struct {
@@ -54,7 +54,7 @@ func incidentGet(c echo.Context) error {
 
 func incidentList(c echo.Context) error {
 	var incidents []Incident
-	err := db.Preload("Phase").Preload("ImpactType").Find(&incidents).Error
+	err := db.Preload("Phase").Preload("ImpactType").Omit("History").Preload("Components").Where(&IncidentState{Phase: Phase{Slug: "closed"}}).Find(&incidents).Error
 	switch err {
 	case nil:
 		return c.JSON(200, incidents)

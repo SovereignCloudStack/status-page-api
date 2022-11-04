@@ -9,7 +9,7 @@ type Component struct {
 	Slug       string      `gorm:"primaryKey" json:"slug"`
 	Labels     Labels      `gorm:"type:jsonb" json:"labels"`
 	Incidents  []*Incident `gorm:"many2many:incident_component;" json:"incidents,omitempty"`
-	Conditions []string    `gorm:"-" json:"conditions"` // computed field
+	Conditions []string    `gorm:"-" json:"conditions,omitempty"` // computed field
 }
 
 func componentLoad(filter interface{}) ([]*Component, error) {
