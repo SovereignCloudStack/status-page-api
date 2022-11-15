@@ -17,6 +17,7 @@ type Incident struct {
 
 type IncidentState struct {
 	RecordCreatedAt time.Time    `gorm:"<-:create" json:"recordCreatedAt"`
+	RecordUpdatedAt time.Time    `json:"recordUpdatedAt"`
 	BeganAt         *time.Time   `json:"beganAt"`
 	EndedAt         *time.Time   `json:"endedAt"`
 	Title           string       `json:"title"`
@@ -54,7 +55,7 @@ func incidentGet(c echo.Context) error {
 
 func incidentList(c echo.Context) error {
 	var incidents []Incident
-	err := db.Preload("Phase").Preload("ImpactType").Omit("History").Preload("Components").Where(&IncidentState{Phase: Phase{Slug: "closed"}}).Find(&incidents).Error
+	err := db.Preload("Phase").Preload("ImpactType").Preload("Components").Where(&IncidentState{Phase: Phase{Slug: "closed"}}).Find(&incidents).Error
 	switch err {
 	case nil:
 		return c.JSON(200, incidents)
@@ -87,6 +88,7 @@ func (i *Incident) Merge(other *Incident) *Incident {
 		History: i.History,
 		IncidentState: IncidentState{
 			RecordCreatedAt: i.RecordCreatedAt,
+			RecordUpdatedAt: i.RecordUpdatedAt,
 			Title:           i.Title,
 			ImpactType:      i.ImpactType,
 			Phase:           i.Phase,
@@ -94,6 +96,9 @@ func (i *Incident) Merge(other *Incident) *Incident {
 			BeganAt:         i.BeganAt,
 			EndedAt:         i.EndedAt,
 		},
+	}
+	if !other.RecordUpdatedAt.IsZero() {
+		product.RecordUpdatedAt = other.RecordUpdatedAt
 	}
 	if len(other.Title) != 0 {
 		product.Title = other.Title
@@ -125,6 +130,7 @@ func incidentUpdate(c echo.Context) error {
 		return echo.NewHTTPError(400)
 	}
 	newIncident.ID = c.Param("id")
+	newIncident.RecordUpdatedAt = time.Now()
 
 	err = db.Transaction(func(tx *gorm.DB) error {
 		// Get full incident from DB
