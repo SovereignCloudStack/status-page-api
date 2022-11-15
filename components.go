@@ -23,7 +23,7 @@ func componentLoad(filter interface{}) ([]*Component, error) {
 		// TODO: Filter out inactive incidents or rewrite this part completely,
 		// offloading matching to database
 		currentIncidents := []*Incident{}
-		err = tx.Preload("Components").Not(&Incident{IncidentState: IncidentState{Phase: Phase{Slug: "closed"}}}).Find(&currentIncidents).Error
+		err = tx.Preload("Components").Not(IncidentState{PhaseSlug: "closed"}).Find(&currentIncidents).Error
 		if err != nil {
 			return err
 		}
