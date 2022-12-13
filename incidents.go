@@ -54,8 +54,26 @@ func incidentGet(c echo.Context) error {
 }
 
 func incidentList(c echo.Context) error {
+	input := struct {
+		Start time.Time `query:"start"`
+		End   time.Time `query:"end"`
+	}{}
+	err := c.Bind(&input)
+	if err != nil {
+		c.Logger().Error(err)
+		return echo.NewHTTPError(400)
+	}
+	query := db.Preload("Phase").Preload("ImpactType").Preload("Components").Debug()
+	if !input.Start.IsZero() {
+		query = query.Where("began_at > ?", input.Start)
+	}
+	if !input.End.IsZero() {
+		query = query.Where(
+			db.Where("ended_at < ?", input.End).Or("ended_at IS NULL"),
+		)
+	}
 	var incidents []Incident
-	err := db.Preload("Phase").Preload("ImpactType").Preload("Components").Where(&IncidentState{Phase: Phase{Slug: "closed"}}).Find(&incidents).Error
+	err = query.Find(&incidents).Error
 	switch err {
 	case nil:
 		return c.JSON(200, incidents)
