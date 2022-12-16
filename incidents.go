@@ -90,6 +90,10 @@ func incidentAdd(c echo.Context) error {
 		c.Logger().Error(err)
 		return echo.NewHTTPError(400)
 	}
+	if newIncident.BeganAt == nil || newIncident.BeganAt.IsZero() {
+		now := time.Now()
+		newIncident.BeganAt = &now
+	}
 	err = db.Create(&newIncident).Error
 	switch err {
 	case nil:
