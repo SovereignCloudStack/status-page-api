@@ -4,10 +4,13 @@ import (
 	"flag"
 	"strings"
 
+	"github.com/SovereignCloudStack/status-page-api/pkg/server"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+
+	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 )
 
 var db *gorm.DB
@@ -17,8 +20,7 @@ func main() {
 	dbDsn := flag.String("postgres-dsn", "host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable", "DB dsn")
 	provisioningFile := flag.String("provisioning-file", "./provisioning.yaml", "YAML file containing components etc. to be provisioned on startup")
 	addr := flag.String("addr", ":3000", "Address to listen on")
-	var corsOrigins string
-	flag.StringVar(&corsOrigins, "cors-origins", "127.0.0.1,localhost", "Allowed CORS origins, seperated by ','")
+	corsOrigins := flag.String("cors-origins", "127.0.0.1,localhost", "Allowed CORS origins, seperated by ','")
 	flag.Parse()
 
 	// HTTP setup
@@ -27,27 +29,10 @@ func main() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.RemoveTrailingSlash())
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: strings.Split(corsOrigins, ","),
+		AllowOrigins: strings.Split(*corsOrigins, ","),
 	}))
 
-	components := e.Group("/components")
-	{
-		components.GET("", componentList)
-		components.GET("/:slug", componentGet)
-		components.GET("/query", componentQueryByLabels)
-	}
-
-	incidents := e.Group("/incidents")
-	{
-		incidents.GET("", incidentList)
-		incidents.POST("", incidentAdd)
-		incident := incidents.Group("/:id")
-		{
-			incident.GET("", incidentGet)
-			incident.PATCH("", incidentUpdate)
-		}
-
-	}
+	api.RegisterHandlers(e, &server.ServerImplementation{})
 
 	// Setup DB
 	var err error
