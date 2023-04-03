@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/SovereignCloudStack/status-page-api/internal/app/swagger"
+	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -47,12 +48,17 @@ func main() {
 	e.GET("/swagger", swagger.ServeSwagger)
 
 	// Setup DB
-	var err error
-	db, err = gorm.Open(postgres.Open(*dbDsn), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(*dbDsn), &gorm.Config{})
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
-	err = db.AutoMigrate(&Incident{}, &Component{}, &ImpactType{}, &Phase{})
+	err = db.AutoMigrate(
+		&DbDef.Component{},
+		&DbDef.IncidentUpdate{},
+		&DbDef.Incident{},
+		&DbDef.ImpactType{},
+		&DbDef.Label{},
+		&DbDef.Phase{})
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
