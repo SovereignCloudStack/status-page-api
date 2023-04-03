@@ -4,6 +4,7 @@ import (
 	"flag"
 	"strings"
 
+	"github.com/SovereignCloudStack/status-page-api/internal/app/swagger"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -33,6 +34,17 @@ func main() {
 	}))
 
 	api.RegisterHandlers(e, &server.ServerImplementation{})
+
+	e.GET("/openapi.json", func(c echo.Context) error {
+		swagger, err := api.GetSwagger()
+		if err != nil {
+			c.Logger().Error(err)
+			return echo.NewHTTPError(500)
+		}
+		return c.JSON(200, swagger)
+	})
+
+	e.GET("/swagger", swagger.ServeSwagger)
 
 	// Setup DB
 	var err error
