@@ -53,18 +53,20 @@ func main() {
 		e.Logger.Fatal(err)
 	}
 	err = db.AutoMigrate(
-		&DbDef.Component{},
-		&DbDef.IncidentUpdate{},
-		&DbDef.Incident{},
-		&DbDef.ImpactType{},
 		&DbDef.Label{},
-		&DbDef.Phase{})
+		&DbDef.ImpactType{},
+		&DbDef.Phase{},
+		&DbDef.Incident{},
+		&DbDef.IncidentUpdate{},
+		&DbDef.Component{},
+	)
+
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 
 	// Initialize "static" DB contents
-	err = provisionResources(*provisioningFile)
+	err = DbDef.Provision(*provisioningFile, db)
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
