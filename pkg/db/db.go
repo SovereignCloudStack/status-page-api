@@ -44,11 +44,24 @@ func Provision(filename string, db *gorm.DB) error {
 		}
 	}
 
+	var phaseOrder uint = 0
 	for _, phase := range resources.Phases {
+		phase.Order = phaseOrder
 		err := db.Save(&phase).Error
 		if err != nil {
 			return fmt.Errorf("error saving phase `%s`: %w", phase.Slug, err)
 		}
+
+		phaseOrder++
+	}
+
+	// always add done phase as last
+	err = db.Save(&Phase{
+		Slug:  "done",
+		Order: phaseOrder,
+	}).Error
+	if err != nil {
+		return fmt.Errorf("error saving phase `done`: %w", err)
 	}
 
 	return nil
