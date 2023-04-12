@@ -7,12 +7,11 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/swagger"
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
+	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 )
 
 var db *gorm.DB

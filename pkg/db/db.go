@@ -75,7 +75,7 @@ func (l *Labels) UnmarshalYAML(value *yaml.Node) error {
 	*l = make(Labels, len(value.Content)/2)
 
 	for i := 0; i < len(value.Content); i += 2 {
-		var res = &(*l)[i/2]
+		res := &(*l)[i/2]
 
 		if err := value.Content[i].Decode(&res.Name); err != nil {
 			return err
