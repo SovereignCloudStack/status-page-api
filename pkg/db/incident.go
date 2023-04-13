@@ -8,7 +8,7 @@ import (
 )
 
 type Incident struct {
-	Id             Id               `gorm:"primaryKey" json:"id"`
+	ID             ID               `gorm:"primaryKey" json:"id"`
 	Affects        []Component      `gorm:"many2many:component_incidents" json:"affects"`
 	BeganAt        *time.Time       `json:"beganAt,omitempty"`
 	Description    string           `json:"description"`
@@ -22,20 +22,20 @@ type Incident struct {
 }
 
 type IncidentUpdate struct {
-	Id         Id        `gorm:"primaryKey"`
+	ID         ID        `gorm:"primaryKey"`
 	CreatedAt  time.Time `json:"createdAt"`
 	Text       string    `json:"text"`
-	IncidentId Id        `json:"-"`
+	IncidentID ID        `json:"-"`
 }
 
-func (i *Incident) BeforeCreate(tx *gorm.DB) error {
-	i.Id = Id(uuid.NewString())
+func (i *Incident) BeforeCreate(_ *gorm.DB) error {
+	i.ID = ID(uuid.NewString())
 
 	return nil
 }
 
-func (iu *IncidentUpdate) BeforeCreate(tx *gorm.DB) error {
-	iu.Id = Id(uuid.NewString())
+func (iu *IncidentUpdate) BeforeCreate(_ *gorm.DB) error {
+	iu.ID = ID(uuid.NewString())
 
 	return nil
 }
