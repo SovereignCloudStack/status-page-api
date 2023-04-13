@@ -1,3 +1,3 @@
 package server
 
-type ServerImplementation struct{}
+type Implementation struct{}

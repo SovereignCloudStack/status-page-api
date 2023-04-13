@@ -8,9 +8,9 @@ import (
 	"gorm.io/gorm"
 )
 
-type Id string
+type ID string
 
-func Provision(filename string, db *gorm.DB) error {
+func Provision(filename string, dbCon *gorm.DB) error {
 	type ProvisionedResources struct {
 		Components  []*Component  `yaml:"components"`
 		ImpactTypes []*ImpactType `yaml:"impactTypes"`
@@ -31,32 +31,33 @@ func Provision(filename string, db *gorm.DB) error {
 	}
 
 	for _, component := range resources.Components {
-		err = db.Save(component).Error
+		err = dbCon.Save(component).Error
 		if err != nil {
 			return fmt.Errorf("error saving component `%s`: %w", component.DisplayName, err)
 		}
 	}
 
 	for _, impactType := range resources.ImpactTypes {
-		err := db.Save(impactType).Error
+		err = dbCon.Save(impactType).Error
 		if err != nil {
 			return fmt.Errorf("error saving impact type `%s`: %w", impactType.Slug, err)
 		}
 	}
 
-	var phaseOrder uint = 0
-	for _, phase := range resources.Phases {
-		phase.Order = phaseOrder
-		err := db.Save(&phase).Error
+	var phaseOrder uint
+	for phaseIndex := range resources.Phases {
+		resources.Phases[phaseIndex].Order = phaseOrder
+
+		err = dbCon.Save(&resources.Phases[phaseIndex]).Error
 		if err != nil {
-			return fmt.Errorf("error saving phase `%s`: %w", phase.Slug, err)
+			return fmt.Errorf("error saving phase `%s`: %w", resources.Phases[phaseIndex].Slug, err)
 		}
 
 		phaseOrder++
 	}
 
 	// always add done phase as last
-	err = db.Save(&Phase{
+	err = dbCon.Save(&Phase{
 		Slug:  "done",
 		Order: phaseOrder,
 	}).Error
@@ -69,20 +70,22 @@ func Provision(filename string, db *gorm.DB) error {
 
 func (l *Labels) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind != yaml.MappingNode {
-		return fmt.Errorf("`labels` must contain YAML mapping, has %v", value.Kind)
+		return fmt.Errorf("error unmarshaling: %w", ErrLabelFormat)
 	}
 
-	*l = make(Labels, len(value.Content)/2)
+	const contentFieldSize = 2
 
-	for i := 0; i < len(value.Content); i += 2 {
-		res := &(*l)[i/2]
+	*l = make(Labels, len(value.Content)/contentFieldSize)
 
-		if err := value.Content[i].Decode(&res.Name); err != nil {
-			return err
+	for contentIndex := 0; contentIndex < len(value.Content); contentIndex += contentFieldSize {
+		res := &(*l)[contentIndex/contentFieldSize]
+
+		if err := value.Content[contentIndex].Decode(&res.Name); err != nil {
+			return fmt.Errorf("error decoding label name: %w", err)
 		}
 
-		if err := value.Content[i+1].Decode(&res.Value); err != nil {
-			return err
+		if err := value.Content[contentIndex+1].Decode(&res.Value); err != nil {
+			return fmt.Errorf("error decoding label value: %w", err)
 		}
 	}
 

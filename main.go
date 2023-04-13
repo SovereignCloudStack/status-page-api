@@ -14,44 +14,52 @@ import (
 	"gorm.io/gorm"
 )
 
-var db *gorm.DB
-
 func main() {
 	// Reading config
-	dbDsn := flag.String("postgres-dsn", "host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable", "DB dsn")
-	provisioningFile := flag.String("provisioning-file", "./provisioning.yaml", "YAML file containing components etc. to be provisioned on startup")
-	addr := flag.String("addr", ":3000", "Address to listen on")
-	corsOrigins := flag.String("cors-origins", "127.0.0.1,localhost", "Allowed CORS origins, seperated by ','")
+	dbDsn := flag.String(
+		"postgres-dsn",
+		"host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable",
+		"DB dsn",
+	)
+	provisioningFile := flag.String(
+		"provisioning-file",
+		"./provisioning.yaml",
+		"YAML file containing components etc. to be provisioned on startup",
+	)
+	addr := flag.String(
+		"addr",
+		":3000",
+		"Address to listen on",
+	)
+	corsOrigins := flag.String(
+		"cors-origins",
+		"127.0.0.1,localhost",
+		"Allowed CORS origins, separated by ','",
+	)
+
 	flag.Parse()
 
 	// HTTP setup
-	e := echo.New()
-	e.Use(middleware.Logger())
-	e.Use(middleware.Recover())
-	e.Use(middleware.RemoveTrailingSlash())
-	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+	echoServer := echo.New()
+	echoServer.Use(middleware.Logger())
+	echoServer.Use(middleware.Recover())
+	echoServer.Use(middleware.RemoveTrailingSlash())
+	echoServer.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: strings.Split(*corsOrigins, ","),
 	}))
 
-	api.RegisterHandlers(e, &server.ServerImplementation{})
+	api.RegisterHandlers(echoServer, &server.Implementation{})
 
-	e.GET("/openapi.json", func(c echo.Context) error {
-		swagger, err := api.GetSwagger()
-		if err != nil {
-			c.Logger().Error(err)
-			return echo.NewHTTPError(500)
-		}
-		return c.JSON(200, swagger)
-	})
+	echoServer.GET("/openapi.json", swagger.ServeOpenAPISpec)
+	echoServer.GET("/swagger", swagger.ServeSwagger)
 
-	e.GET("/swagger", swagger.ServeSwagger)
-
-	// Setup DB
-	db, err := gorm.Open(postgres.Open(*dbDsn), &gorm.Config{})
+	// DB setup
+	dbCon, err := gorm.Open(postgres.Open(*dbDsn), &gorm.Config{})
 	if err != nil {
-		e.Logger.Fatal(err)
+		echoServer.Logger.Fatal(err)
 	}
-	err = db.AutoMigrate(
+
+	err = dbCon.AutoMigrate(
 		&DbDef.Label{},
 		&DbDef.ImpactType{},
 		&DbDef.Phase{},
@@ -59,17 +67,16 @@ func main() {
 		&DbDef.IncidentUpdate{},
 		&DbDef.Component{},
 	)
-
 	if err != nil {
-		e.Logger.Fatal(err)
+		echoServer.Logger.Fatal(err)
 	}
 
 	// Initialize "static" DB contents
-	err = DbDef.Provision(*provisioningFile, db)
+	err = DbDef.Provision(*provisioningFile, dbCon)
 	if err != nil {
-		e.Logger.Fatal(err)
+		echoServer.Logger.Fatal(err)
 	}
 
 	// Starting server
-	e.Logger.Fatal(e.Start(*addr))
+	echoServer.Logger.Fatal(echoServer.Start(*addr))
 }

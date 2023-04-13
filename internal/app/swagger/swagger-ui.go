@@ -1,9 +1,14 @@
 package swagger
 
-import "github.com/labstack/echo/v4"
+import (
+	"net/http"
+
+	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	"github.com/labstack/echo/v4"
+)
 
 // https://github.com/swagger-api/swagger-ui/blob/master/docs/usage/installation.md
-const swaggerHtml = `
+const swaggerHTML = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -38,6 +43,17 @@ const swaggerHtml = `
 </html>
 `
 
-func ServeSwagger(c echo.Context) error {
-	return c.HTML(200, swaggerHtml)
+func ServeSwagger(ctx echo.Context) error {
+	return ctx.HTML(http.StatusOK, swaggerHTML)
+}
+
+func ServeOpenAPISpec(ctx echo.Context) error {
+	swagger, err := api.GetSwagger()
+	if err != nil {
+		ctx.Logger().Error(err)
+
+		return echo.NewHTTPError(http.StatusInternalServerError)
+	}
+
+	return ctx.JSON(http.StatusOK, swagger)
 }
