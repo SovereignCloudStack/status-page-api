@@ -17,3 +17,23 @@ func (c *Component) BeforeCreate(_ *gorm.DB) error {
 
 	return nil
 }
+
+func (c *Component) GetAffectedByIDs() []string {
+	incidentIds := make([]string, len(c.AffectedBy))
+
+	for incidentIndex, incident := range c.AffectedBy {
+		incidentIds[incidentIndex] = string(incident.ID)
+	}
+
+	return incidentIds
+}
+
+func (c *Component) GetLabelMap() map[string]string {
+	labelMap := make(map[string]string)
+
+	for _, label := range c.Labels {
+		labelMap[label.Name] = label.Value
+	}
+
+	return labelMap
+}
