@@ -48,8 +48,6 @@ func main() {
 		AllowOrigins: strings.Split(*corsOrigins, ","),
 	}))
 
-	api.RegisterHandlers(echoServer, &server.Implementation{})
-
 	echoServer.GET("/openapi.json", swagger.ServeOpenAPISpec)
 	echoServer.GET("/swagger", swagger.ServeSwagger)
 
@@ -76,6 +74,9 @@ func main() {
 	if err != nil {
 		echoServer.Logger.Fatal(err)
 	}
+
+	// register api
+	api.RegisterHandlers(echoServer, server.New(dbCon))
 
 	// Starting server
 	echoServer.Logger.Fatal(echoServer.Start(*addr))
