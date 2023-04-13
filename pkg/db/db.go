@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -11,6 +12,21 @@ import (
 type ID string
 
 func Provision(filename string, dbCon *gorm.DB) error {
+	var donePhase Phase
+	res := dbCon.Where("slug = ?", "done").First(&donePhase)
+
+	err := res.Error
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return fmt.Errorf("error getting `done` phase: %w", err)
+		}
+	}
+
+	if donePhase.Order != 0 {
+		// db has been provisioned before
+		return nil
+	}
+
 	type ProvisionedResources struct {
 		Components  []*Component  `yaml:"components"`
 		ImpactTypes []*ImpactType `yaml:"impactTypes"`
