@@ -9,7 +9,7 @@ import (
 )
 
 func (i *Implementation) GetPhases(ctx echo.Context) error {
-	var phases []DbDef.Phase
+	var phases []*DbDef.Phase
 
 	res := i.dbCon.Find(&phases)
 
@@ -18,9 +18,9 @@ func (i *Implementation) GetPhases(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	phaseList := make([]api.IncidentPhase, len(phases))
+	phaseList := make([]*api.IncidentPhase, len(phases))
 	for _, phase := range phases {
-		phaseList[phase.Order] = phase.Slug
+		phaseList[phase.Order] = &phase.Slug
 	}
 
 	return ctx.JSON(http.StatusOK, phaseList)

@@ -9,7 +9,7 @@ import (
 )
 
 func (i *Implementation) GetImpacttypes(ctx echo.Context) error {
-	var impactTypes []DbDef.ImpactType
+	var impactTypes []*DbDef.ImpactType
 
 	res := i.dbCon.Find(&impactTypes)
 
@@ -18,9 +18,9 @@ func (i *Implementation) GetImpacttypes(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 	}
 
-	impactTypeList := make([]api.IncidentImpactType, len(impactTypes))
+	impactTypeList := make([]*api.IncidentImpactType, len(impactTypes))
 	for impactTypeIndex, impactType := range impactTypes {
-		impactTypeList[impactTypeIndex] = impactType.Slug
+		impactTypeList[impactTypeIndex] = &impactType.Slug
 	}
 
 	return ctx.JSON(http.StatusOK, impactTypeList)
