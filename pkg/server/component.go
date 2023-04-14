@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (i *Implementation) GetComponent(ctx echo.Context, componentId string) error {
+func (i *Implementation) GetComponent(ctx echo.Context, componentID string) error {
 	var component DbDef.Component
 
-	res := i.dbCon.Preload(clause.Associations).Where("id = ?", componentId).First(&component)
+	res := i.dbCon.Preload(clause.Associations).Where("id = ?", componentID).First(&component)
 
 	err := res.Error
 	if err != nil {
