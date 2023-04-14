@@ -18,7 +18,7 @@ type Incident struct {
 	PhaseSlug      string           `json:"-"`
 	Phase          Phase            `gorm:"foreignKey:PhaseSlug" json:"phase"`
 	Title          string           `json:"title"`
-	Updates        []IncidentUpdate `json:"updates"`
+	Updates        []IncidentUpdate `gorm:"foreignKey:IncidentID" json:"updates"`
 }
 
 type IncidentUpdate struct {
@@ -38,4 +38,14 @@ func (iu *IncidentUpdate) BeforeCreate(_ *gorm.DB) error {
 	iu.ID = ID(uuid.NewString())
 
 	return nil
+}
+
+func (i *Incident) GetAffectsIds() []string {
+	componentIds := make([]string, len(i.Affects))
+
+	for componentIndex, component := range i.Affects {
+		componentIds[componentIndex] = string(component.ID)
+	}
+
+	return componentIds
 }
