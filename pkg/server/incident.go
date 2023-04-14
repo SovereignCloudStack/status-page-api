@@ -9,10 +9,10 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func (i *Implementation) GetIncident(ctx echo.Context, incidentId string) error {
+func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error {
 	var incident DbDef.Incident
 
-	res := i.dbCon.Preload(clause.Associations).Where("id = ?", incidentId).First(&incident)
+	res := i.dbCon.Preload(clause.Associations).Where("id = ?", incidentID).First(&incident)
 
 	err := res.Error
 	if err != nil {
@@ -25,7 +25,13 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentId string) error 
 func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsParams) error {
 	var incidents []*DbDef.Incident
 
-	res := i.dbCon.Preload(clause.Associations).Where("began_at > ?", params.Start).Where("ended_at < ?", params.End).Find(&incidents)
+	res := i.dbCon.Preload(
+		clause.Associations,
+	).Where(
+		"began_at > ?", params.Start,
+	).Where(
+		"ended_at < ?", params.End,
+	).Find(&incidents)
 
 	err := res.Error
 	if err != nil {
