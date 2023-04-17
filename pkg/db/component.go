@@ -5,6 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Component represents a single component that could be affected by many [Incident].
 type Component struct {
 	ID          ID         `gorm:"primaryKey" json:"id"`
 	AffectedBy  []Incident `gorm:"many2many:component_incidents" json:"affectedBy"`
@@ -12,12 +13,14 @@ type Component struct {
 	Labels      Labels     `gorm:"many2many:component_labels" json:"labels"`
 }
 
+// BeforeCreate implements the behavior before a database insertion. This adds an UUID as ID.
 func (c *Component) BeforeCreate(_ *gorm.DB) error {
 	c.ID = ID(uuid.NewString())
 
 	return nil
 }
 
+// GetAffectedByIDs is a helper function to convert the affecting incidents to a list of [Incident.ID]s.
 func (c *Component) GetAffectedByIDs() []string {
 	incidentIds := make([]string, len(c.AffectedBy))
 
@@ -28,6 +31,7 @@ func (c *Component) GetAffectedByIDs() []string {
 	return incidentIds
 }
 
+// GetLabelMap is a helper function to convert the label objects to a string map.
 func (c *Component) GetLabelMap() map[string]string {
 	labelMap := make(map[string]string)
 

@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// GetImpacttypes retrieves a list of all impact types.
 func (i *Implementation) GetImpacttypes(ctx echo.Context) error {
 	var impactTypes []*DbDef.ImpactType
 

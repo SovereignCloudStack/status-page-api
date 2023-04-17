@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// GetIncident retrieves a specific incident by ID.
 func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error {
 	var incident DbDef.Incident
 
@@ -22,6 +23,7 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 	return ctx.JSON(http.StatusOK, IncidentFromDB(&incident))
 }
 
+// GetIncidents retrieves a list of all active incidents between a start and end.
 func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsParams) error {
 	var incidents []*DbDef.Incident
 
@@ -46,6 +48,7 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 	return ctx.JSON(http.StatusOK, incidentList)
 }
 
+// IncidentFromDB is a helper function, converting a [db.Incident] to an [api.Incident].
 func IncidentFromDB(incident *DbDef.Incident) *api.Incident {
 	return &api.Incident{
 		Affects:     incident.GetAffectsIds(),
@@ -60,6 +63,7 @@ func IncidentFromDB(incident *DbDef.Incident) *api.Incident {
 	}
 }
 
+// IncidentUpdatesFromDB is a helper function, converting a list of [db.IncidentUpdate]s to a list of [api.IncidentUpdate]s.
 func IncidentUpdatesFromDB(updates []DbDef.IncidentUpdate) []api.IncidentUpdate {
 	updateList := make([]api.IncidentUpdate, len(updates))
 

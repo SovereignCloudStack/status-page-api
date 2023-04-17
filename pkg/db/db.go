@@ -9,8 +9,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// ID is the generally used identifier type. String type for UUIDs.
 type ID string
 
+// Provision initializes the database with the contents of the provision file.
 func Provision(filename string, dbCon *gorm.DB) error {
 	var donePhase Phase
 	res := dbCon.Where("slug = ?", "done").First(&donePhase)
@@ -84,6 +86,7 @@ func Provision(filename string, dbCon *gorm.DB) error {
 	return nil
 }
 
+// UnmarshalYAML implments the unmarshaling for labels, as they are being read as map and converted to [Label] object.
 func (l *Labels) UnmarshalYAML(value *yaml.Node) error {
 	if value.Kind != yaml.MappingNode {
 		return fmt.Errorf("error unmarshaling: %w", ErrLabelFormat)
