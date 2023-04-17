@@ -16,7 +16,7 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 
 	err := res.Error
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	return ctx.JSON(http.StatusOK, IncidentFromDB(&incident))
@@ -35,7 +35,7 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 
 	err := res.Error
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	incidentList := make([]*api.Incident, len(incidents))

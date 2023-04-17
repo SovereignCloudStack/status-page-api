@@ -16,7 +16,7 @@ func (i *Implementation) GetComponent(ctx echo.Context, componentID string) erro
 
 	err := res.Error
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error)
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	return ctx.JSON(http.StatusOK, componentFromDB(&component))
@@ -29,7 +29,7 @@ func (i *Implementation) GetComponents(ctx echo.Context) error {
 
 	err := res.Error
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	componentList := make([]*api.Component, len(components))
