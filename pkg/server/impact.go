@@ -15,7 +15,7 @@ func (i *Implementation) GetImpacttypes(ctx echo.Context) error {
 
 	err := res.Error
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	impactTypeList := make([]*api.IncidentImpactType, len(impactTypes))
