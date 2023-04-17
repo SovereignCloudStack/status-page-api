@@ -8,6 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// GetPhases retrieves a list of all phases.
 func (i *Implementation) GetPhases(ctx echo.Context) error {
 	var phases []*DbDef.Phase
 

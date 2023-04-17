@@ -43,10 +43,12 @@ const swaggerHTML = `
 </html>
 `
 
+// ServeSwagger serves the html for displaying swagger UI.
 func ServeSwagger(ctx echo.Context) error {
 	return ctx.HTML(http.StatusOK, swaggerHTML)
 }
 
+// ServeOpenAPISpec decodes and serves the OpenAPI.json spec.
 func ServeOpenAPISpec(ctx echo.Context) error {
 	swagger, err := api.GetSwagger()
 	if err != nil {

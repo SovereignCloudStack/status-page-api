@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+// GetComponent retrieves a specific component by ID.
 func (i *Implementation) GetComponent(ctx echo.Context, componentID string) error {
 	var component DbDef.Component
 
@@ -22,6 +23,7 @@ func (i *Implementation) GetComponent(ctx echo.Context, componentID string) erro
 	return ctx.JSON(http.StatusOK, componentFromDB(&component))
 }
 
+// GetComponents retrieves a list of all components.
 func (i *Implementation) GetComponents(ctx echo.Context) error {
 	var components []*DbDef.Component
 
@@ -40,6 +42,7 @@ func (i *Implementation) GetComponents(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, componentList)
 }
 
+// componentFromDB is a helper function, converting a [db.Component] to an [api.Component].
 func componentFromDB(component *DbDef.Component) *api.Component {
 	return &api.Component{
 		AffectedBy:  component.GetAffectedByIDs(),
