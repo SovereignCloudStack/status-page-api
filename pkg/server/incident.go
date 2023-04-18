@@ -30,9 +30,11 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 	res := i.dbCon.Preload(
 		clause.Associations,
 	).Where(
-		"ended_at >= ?", params.Start,
+		i.dbCon.Not(i.dbCon.Where("began_at < ?", params.Start).Where("ended_at < ?", params.Start)),
+	).Where(
+		i.dbCon.Not(i.dbCon.Where("began_at > ?", params.End).Where("ended_at > ?", params.End)),
 	).Or(
-		"began_at <= ?", params.End,
+		i.dbCon.Where("ended_at IS NULL").Where("began_at <= ?", params.End),
 	).Find(&incidents)
 
 	err := res.Error
