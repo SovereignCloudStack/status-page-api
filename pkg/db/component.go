@@ -1,43 +1,11 @@
 package db
 
 import (
-	"github.com/google/uuid"
-	"gorm.io/gorm"
+	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 )
 
 // Component represents a single component that could be affected by many [Incident].
 type Component struct {
-	ID          ID         `gorm:"primaryKey" json:"id"`
-	AffectedBy  []Incident `gorm:"many2many:component_incidents" json:"affectedBy"`
-	DisplayName string     `json:"displayName"`
-	Labels      Labels     `gorm:"many2many:component_labels" json:"labels"`
-}
-
-// BeforeCreate implements the behavior before a database insertion. This adds an UUID as ID.
-func (c *Component) BeforeCreate(_ *gorm.DB) error {
-	c.ID = ID(uuid.NewString())
-
-	return nil
-}
-
-// GetAffectedByIDs is a helper function to convert the affecting incidents to a list of [Incident.ID]s.
-func (c *Component) GetAffectedByIDs() []string {
-	incidentIds := make([]string, len(c.AffectedBy))
-
-	for incidentIndex, incident := range c.AffectedBy {
-		incidentIds[incidentIndex] = string(incident.ID)
-	}
-
-	return incidentIds
-}
-
-// GetLabelMap is a helper function to convert the label objects to a string map.
-func (c *Component) GetLabelMap() map[string]string {
-	labelMap := make(map[string]string)
-
-	for _, label := range c.Labels {
-		labelMap[label.Name] = label.Value
-	}
-
-	return labelMap
+	Model         `gorm:"embedded"`
+	api.Component `gorm:"embedded"`
 }
