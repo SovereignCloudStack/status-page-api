@@ -3,6 +3,7 @@ package db
 import (
 	"time"
 
+	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -24,22 +25,13 @@ type Incident struct {
 
 // IncidentUpdate describes a action that changes the incident.
 type IncidentUpdate struct {
-	ID         ID        `gorm:"primaryKey"`
-	CreatedAt  time.Time `json:"createdAt"`
-	Text       string    `json:"text"`
-	IncidentID ID        `json:"-"`
+	Model              `gorm:"embedded"`
+	api.IncidentUpdate `gorm:"embedded"`
 }
 
 // BeforeCreate implements the behavior before a database insertion. This adds an UUID as ID.
 func (i *Incident) BeforeCreate(_ *gorm.DB) error {
-	i.ID = ID(uuid.NewString())
-
-	return nil
-}
-
-// BeforeCreate implements the behavior before a database insertion. This adds an UUID as ID.
-func (iu *IncidentUpdate) BeforeCreate(_ *gorm.DB) error {
-	iu.ID = ID(uuid.NewString())
+	i.ID = uuid.New()
 
 	return nil
 }
@@ -49,7 +41,7 @@ func (i *Incident) GetAffectsIds() []string {
 	componentIds := make([]string, len(i.Affects))
 
 	for componentIndex, component := range i.Affects {
-		componentIds[componentIndex] = string(component.ID)
+		componentIds[componentIndex] = component.ID.String()
 	}
 
 	return componentIds
