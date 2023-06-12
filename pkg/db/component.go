@@ -6,8 +6,8 @@ import (
 
 // Component represents a single component that could be affected by many [Incident].
 type Component struct {
-	DisplayName        api.DisplayName
-	Labels             api.Labels `gorm:"type:jsonb"`
-	ActivelyAffectedBy []*Impact  `gorm:"foreignKey:ComponentID"`
 	Model              `gorm:"embedded"`
+	DisplayName        *api.DisplayName `yaml:"displayname"`
+	Labels             *api.Labels      `gorm:"type:jsonb" yaml:"labels"`
+	ActivelyAffectedBy []*Impact        `gorm:"foreignKey:ComponentID"`
 }
