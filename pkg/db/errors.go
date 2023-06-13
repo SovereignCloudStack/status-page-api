@@ -2,5 +2,5 @@ package db
 
 import "errors"
 
-// ErrLabelFormat label has not a map as value.
-var ErrLabelFormat = errors.New("`labels` must contain YAML mapping")
+// ErrInvalidLabelData Data is of invalid type.
+var ErrInvalidLabelData = errors.New("label data is invalid")
