@@ -9,7 +9,7 @@ import (
 )
 
 // GetPhases retrieves a list of all phases.
-func (i *Implementation) GetPhases(ctx echo.Context) error {
+func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListParams) error {
 	var phases []*DbDef.Phase
 
 	res := i.dbCon.Find(&phases)
@@ -26,3 +26,5 @@ func (i *Implementation) GetPhases(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, phaseList)
 }
+
+func (i *Implementation) CreatePhaseList(ctx echo.Context) error

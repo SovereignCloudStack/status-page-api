@@ -9,7 +9,7 @@ import (
 )
 
 // GetImpacttypes retrieves a list of all impact types.
-func (i *Implementation) GetImpacttypes(ctx echo.Context) error {
+func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 	var impactTypes []*DbDef.ImpactType
 
 	res := i.dbCon.Find(&impactTypes)
@@ -26,3 +26,8 @@ func (i *Implementation) GetImpacttypes(ctx echo.Context) error {
 
 	return ctx.JSON(http.StatusOK, impactTypeList)
 }
+
+func (i *Implementation) CreateImpactType(ctx echo.Context) error
+func (i *Implementation) DeleteImpactType(ctx echo.Context, impactTypeId api.ImpactTypeIdPathParameter) error
+func (i *Implementation) GetImpactType(ctx echo.Context, impactTypeId api.ImpactTypeIdPathParameter) error
+func (i *Implementation) UpdateImpactType(ctx echo.Context, impactTypeId api.ImpactTypeIdPathParameter) error
