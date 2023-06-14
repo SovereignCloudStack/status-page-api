@@ -28,16 +28,33 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	incidentList := make([]*api.Incident, len(incidents))
-	for incidentIndex := range incidentList {
-		incidentList[incidentIndex] = IncidentFromDB(incidents[incidentIndex])
+	data := make([]api.IncidentResponseData, len(incidents))
+	for incidentIndex, incident := range incidents {
+		data[incidentIndex].Id = incident.ID.String()
+		data[incidentIndex].DisplayName = incident.DisplayName
+		data[incidentIndex].Description = incident.Description
+		data[incidentIndex].BeganAt = incident.BeganAt
+		data[incidentIndex].EndedAt = incident.EndedAt
+		data[incidentIndex].Phase.Generation = *incident.Phase.Generation
+		data[incidentIndex].Phase.Order = *incident.Phase.Order
+		data[incidentIndex].Affects = incident.GetImpactComponentList()
+		data[incidentIndex].Updates = incident.GetIncidentUpdates()
 	}
 
-	return ctx.JSON(http.StatusOK, incidentList)
+	response := api.IncidentListResponse{
+		Data: &data,
+	}
+
+	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
 }
 
-func (i *Implementation) CreateIncident(ctx echo.Context) error
-func (i *Implementation) DeleteIncident(ctx echo.Context, incidentId api.IncidentIdPathParameter) error
+func (i *Implementation) CreateIncident(_ echo.Context) error {
+	return nil
+}
+
+func (i *Implementation) DeleteIncident(_ echo.Context, _ api.IncidentIdPathParameter) error {
+	return nil
+}
 
 // GetIncident retrieves a specific incident by ID.
 func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error {
@@ -50,24 +67,57 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return ctx.JSON(http.StatusOK, IncidentFromDB(&incident))
+	response := api.IncidentResponse{
+		Data: &api.IncidentResponseData{
+			Id:          incident.ID.String(),
+			DisplayName: incident.DisplayName,
+			Description: incident.Description,
+			BeganAt:     incident.BeganAt,
+			EndedAt:     incident.EndedAt,
+			Phase: &api.PhaseReference{
+				Generation: *incident.Phase.Generation,
+				Order:      *incident.Phase.Order,
+			},
+			Affects: incident.GetImpactComponentList(),
+			Updates: incident.GetIncidentUpdates(),
+		},
+	}
+
+	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
 }
 
-func (i *Implementation) UpdateIncident(ctx echo.Context, incidentId api.IncidentIdPathParameter) error
-
-func (i *Implementation) GetIncidentUpdates(ctx echo.Context, incidentId api.IncidentIdPathParameter) error
-func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentId api.IncidentIdPathParameter) error
-func (i *Implementation) DeleteIncidentUpdate(ctx echo.Context, incidentId api.IncidentIdPathParameter, updateOrder api.IncidentUpdateOrderPathParameter) error
-func (i *Implementation) GetIncidentUpdate(ctx echo.Context, incidentId api.IncidentIdPathParameter, updateOrder api.IncidentUpdateOrderPathParameter) error
-func (i *Implementation) UpdateIncidentUpdate(ctx echo.Context, incidentId api.IncidentIdPathParameter, updateOrder api.IncidentUpdateOrderPathParameter) error
-
-// IncidentFromDB is a helper function, converting a [db.Incident] to an [api.Incident].
-func IncidentFromDB(incident *DbDef.Incident) *api.Incident {
-	return &api.Incident{}
+func (i *Implementation) UpdateIncident(_ echo.Context, _ api.IncidentIdPathParameter) error {
+	return nil
 }
 
-// IncidentUpdatesFromDB is a helper function, converting a list of [db.IncidentUpdate]s to a list of [api.IncidentUpdate]s.
-func IncidentUpdatesFromDB(updates []DbDef.IncidentUpdate) []api.IncidentUpdate {
-	updateList := make([]api.IncidentUpdate, len(updates))
-	return updateList
+func (i *Implementation) GetIncidentUpdates(_ echo.Context, _ api.IncidentIdPathParameter) error {
+	return nil
+}
+
+func (i *Implementation) CreateIncidentUpdate(_ echo.Context, _ api.IncidentIdPathParameter) error {
+	return nil
+}
+
+func (i *Implementation) DeleteIncidentUpdate(
+	_ echo.Context,
+	_ api.IncidentIdPathParameter,
+	_ api.IncidentUpdateOrderPathParameter,
+) error {
+	return nil
+}
+
+func (i *Implementation) GetIncidentUpdate(
+	_ echo.Context,
+	_ api.IncidentIdPathParameter,
+	_ api.IncidentUpdateOrderPathParameter,
+) error {
+	return nil
+}
+
+func (i *Implementation) UpdateIncidentUpdate(
+	_ echo.Context,
+	_ api.IncidentIdPathParameter,
+	_ api.IncidentUpdateOrderPathParameter,
+) error {
+	return nil
 }

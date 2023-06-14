@@ -19,15 +19,32 @@ func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	impactTypeList := make([]*api.IncidentImpactType, len(impactTypes))
+	data := make([]api.ImpactTypeResponseData, len(impactTypes))
 	for impactTypeIndex, impactType := range impactTypes {
-		impactTypeList[impactTypeIndex] = &impactType.Slug
+		data[impactTypeIndex].Id = impactType.ID.String()
+		data[impactTypeIndex].DisplayName = impactType.DisplayName
+		data[impactTypeIndex].Description = impactType.Description
 	}
 
-	return ctx.JSON(http.StatusOK, impactTypeList)
+	response := api.ImpactTypeListResponse{
+		Data: &data,
+	}
+
+	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
 }
 
-func (i *Implementation) CreateImpactType(ctx echo.Context) error
-func (i *Implementation) DeleteImpactType(ctx echo.Context, impactTypeId api.ImpactTypeIdPathParameter) error
-func (i *Implementation) GetImpactType(ctx echo.Context, impactTypeId api.ImpactTypeIdPathParameter) error
-func (i *Implementation) UpdateImpactType(ctx echo.Context, impactTypeId api.ImpactTypeIdPathParameter) error
+func (i *Implementation) CreateImpactType(_ echo.Context) error {
+	return nil
+}
+
+func (i *Implementation) DeleteImpactType(_ echo.Context, _ api.ImpactTypeIdPathParameter) error {
+	return nil
+}
+
+func (i *Implementation) GetImpactType(_ echo.Context, _ api.ImpactTypeIdPathParameter) error {
+	return nil
+}
+
+func (i *Implementation) UpdateImpactType(_ echo.Context, _ api.ImpactTypeIdPathParameter) error {
+	return nil
+}

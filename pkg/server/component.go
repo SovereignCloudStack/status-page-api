@@ -20,17 +20,28 @@ func (i *Implementation) GetComponents(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	componentList := make([]*api.Component, len(components))
-	for componentIndex := range componentList {
-		componentList[componentIndex] = componentFromDB(components[componentIndex])
+	data := make([]api.ComponentResponseData, len(components))
+	for componentIndex, component := range components {
+		data[componentIndex].Id = component.ID.String()
+		data[componentIndex].DisplayName = component.DisplayName
+		data[componentIndex].Labels = (*api.Labels)(component.Labels)
+		data[componentIndex].ActivelyAffectedBy = component.GetImpactIncidentList()
 	}
 
-	return ctx.JSON(http.StatusOK, componentList)
+	response := api.ComponentListResponse{
+		Data: &data,
+	}
+
+	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
 }
 
-func (i *Implementation) CreateComponent(ctx echo.Context) error
+func (i *Implementation) CreateComponent(_ echo.Context) error {
+	return nil
+}
 
-func (i *Implementation) DeleteComponent(ctx echo.Context, componentId api.ComponentIdPathParameter) error
+func (i *Implementation) DeleteComponent(_ echo.Context, _ api.ComponentIdPathParameter) error {
+	return nil
+}
 
 // GetComponent retrieves a specific component by ID.
 func (i *Implementation) GetComponent(ctx echo.Context, componentID string) error {
@@ -43,12 +54,18 @@ func (i *Implementation) GetComponent(ctx echo.Context, componentID string) erro
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return ctx.JSON(http.StatusOK, componentFromDB(&component))
+	response := api.ComponentResponse{
+		Data: &api.ComponentResponseData{
+			Id:                 component.ID.String(),
+			DisplayName:        component.DisplayName,
+			Labels:             (*api.Labels)(component.Labels),
+			ActivelyAffectedBy: component.GetImpactIncidentList(),
+		},
+	}
+
+	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
 }
 
-func (i *Implementation) UpdateComponent(ctx echo.Context, componentId api.ComponentIdPathParameter) error
-
-// componentFromDB is a helper function, converting a [db.Component] to an [api.Component].
-func componentFromDB(component *DbDef.Component) *api.Component {
-	return &api.Component{}
+func (i *Implementation) UpdateComponent(_ echo.Context, _ api.ComponentIdPathParameter) error {
+	return nil
 }

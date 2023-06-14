@@ -10,21 +10,46 @@ import (
 
 // GetPhases retrieves a list of all phases.
 func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListParams) error {
+	var (
+		generation int
+		err        error
+	)
+
+	// TODO: catch incorrect generations - 404 or 400
+
+	if params.Generation == nil {
+		generation, err = GetCurrentPhaseGeneration(i.dbCon)
+		if err != nil {
+			return echo.ErrInternalServerError
+		}
+	} else {
+		generation = *params.Generation
+	}
+
 	var phases []*DbDef.Phase
 
-	res := i.dbCon.Find(&phases)
+	res := i.dbCon.Where("generation = ?", generation).Order("\"order\" asc").Find(&phases)
 
-	err := res.Error
+	err = res.Error
 	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	phaseList := make([]*api.IncidentPhase, len(phases))
-	for _, phase := range phases {
-		phaseList[phase.Order] = &phase.Slug
+	data := make([]api.Phase, len(phases))
+	for phaseIndex, phase := range phases {
+		data[phaseIndex] = *phase.Name
 	}
 
-	return ctx.JSON(http.StatusOK, phaseList)
+	response := api.PhaseListResponse{
+		Data: &api.PhaseListResponseData{
+			Generation: generation,
+			Phases:     data,
+		},
+	}
+
+	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
 }
 
-func (i *Implementation) CreatePhaseList(ctx echo.Context) error
+func (i *Implementation) CreatePhaseList(_ echo.Context) error {
+	return nil
+}
