@@ -8,7 +8,7 @@ import (
 type Component struct {
 	Model              `gorm:"embedded"`
 	DisplayName        *api.DisplayName `yaml:"displayname"`
-	Labels             *Labels          `gorm:"type:jsonb" yaml:"labels"`
+	Labels             *Labels          `gorm:"type:jsonb"             yaml:"labels"`
 	ActivelyAffectedBy *[]Impact        `gorm:"foreignKey:ComponentID"`
 }
 

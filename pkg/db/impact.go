@@ -5,7 +5,7 @@ import "github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 // ImpactType represents the type of impact.
 type ImpactType struct {
 	Model       `gorm:"embedded"`
-	DisplayName *api.DisplayName `gorm:"not null" yaml:"displayname"`
+	DisplayName *api.DisplayName `gorm:"not null"    yaml:"displayname"`
 	Description *api.Description `yaml:"description"`
 }
 
