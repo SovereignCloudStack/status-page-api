@@ -15,10 +15,14 @@ go-fump:
 go-gci:
 	gci write --skip-generated -s standard -s default .
 
-go-format: fmt fump gci
+go-format: go-fmt go-fump go-gci
 
 go-lint:
 	golangci-lint run
+
+go-lint-fix:
+	# try auto-fix for lint errors
+	golangci-lint run --fix
 
 go-test:
 	go test ./...
