@@ -45,7 +45,7 @@ const swaggerHTML = `
 
 // ServeSwagger serves the html for displaying swagger UI.
 func ServeSwagger(ctx echo.Context) error {
-	return ctx.HTML(http.StatusOK, swaggerHTML)
+	return ctx.HTML(http.StatusOK, swaggerHTML) //nolint:wrapcheck
 }
 
 // ServeOpenAPISpec decodes and serves the OpenAPI.json spec.
@@ -57,5 +57,5 @@ func ServeOpenAPISpec(ctx echo.Context) error {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return ctx.JSON(http.StatusOK, swagger)
+	return ctx.JSONPretty(http.StatusOK, swagger, "  ") //nolint:wrapcheck
 }
