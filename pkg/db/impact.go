@@ -9,6 +9,17 @@ type ImpactType struct {
 	Description *api.Description `yaml:"description"`
 }
 
+// Update updates the writables fields from an API request.
+func (it *ImpactType) Update(impactType *api.ImpactType) {
+	if impactType.DisplayName != nil {
+		it.DisplayName = impactType.DisplayName
+	}
+
+	if impactType.Description != nil {
+		it.Description = impactType.Description
+	}
+}
+
 type Impact struct {
 	Incident   *Incident   `gorm:"foreignKey:IncidentID"`
 	Component  *Component  `gorm:"foreignKey:ComponentID"`

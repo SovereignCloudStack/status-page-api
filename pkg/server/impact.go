@@ -8,7 +8,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-// GetImpacttypes retrieves a list of all impact types.
+// GetImpactTypes retrieves a list of all impact types.
 func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 	var impactTypes []*DbDef.ImpactType
 
@@ -33,18 +33,120 @@ func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
 }
 
-func (i *Implementation) CreateImpactType(_ echo.Context) error {
-	return nil
+// CreateImpactType handles creation of impact types.
+func (i *Implementation) CreateImpactType(ctx echo.Context) error {
+	var request api.CreateImpactTypeJSONRequestBody
+
+	err := ctx.Bind(&request)
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error binding create impact type request")
+
+		return echo.ErrInternalServerError
+	}
+
+	i.logger.Debug().Interface("request", request).Msg("creating impact type")
+
+	impactType := DbDef.ImpactType{ //nolint:exhaustruct
+		DisplayName: request.DisplayName,
+		Description: request.Description,
+	}
+
+	res := i.dbCon.Save(&impactType)
+
+	err = res.Error
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error creating impact type")
+
+		return echo.ErrInternalServerError
+	}
+
+	return ctx.JSON(http.StatusOK, api.IdResponse{ //nolint:wrapcheck
+		Id: impactType.ID.String(),
+	})
 }
 
-func (i *Implementation) DeleteImpactType(_ echo.Context, _ api.ImpactTypeIdPathParameter) error {
-	return nil
+// DeleteImpactType handles deletion of impact types.
+func (i *Implementation) DeleteImpactType(ctx echo.Context, impactTypeID api.ImpactTypeIdPathParameter) error {
+	i.logger.Debug().Str("id", impactTypeID).Msg("deleting impact type")
+	res := i.dbCon.Where("id = ?", impactTypeID).Delete(&DbDef.ImpactType{}) //nolint: exhaustruct
+
+	err := res.Error
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error deleting impact type")
+
+		return echo.ErrInternalServerError
+	}
+
+	if res.RowsAffected == 0 {
+		return echo.ErrNotFound
+	}
+
+	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck
 }
 
-func (i *Implementation) GetImpactType(_ echo.Context, _ api.ImpactTypeIdPathParameter) error {
-	return nil
+// GetImpactType retrieves a specific impact type by ID.
+func (i *Implementation) GetImpactType(ctx echo.Context, impactTypeID api.ImpactTypeIdPathParameter) error {
+	var impactType DbDef.ImpactType
+
+	res := i.dbCon.Where("id = ?", impactTypeID).First(&impactType)
+
+	err := res.Error
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error retrieving impact type")
+
+		return echo.ErrInternalServerError
+	}
+
+	response := api.ImpactTypeResponse{
+		Data: &api.ImpactTypeResponseData{
+			Id:          impactType.ID.String(),
+			DisplayName: impactType.DisplayName,
+			Description: impactType.Description,
+		},
+	}
+
+	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
 }
 
-func (i *Implementation) UpdateImpactType(_ echo.Context, _ api.ImpactTypeIdPathParameter) error {
-	return nil
+// UpdateImpactType handles updates of impact types.
+func (i *Implementation) UpdateImpactType(ctx echo.Context, impactTypeID api.ImpactTypeIdPathParameter) error {
+	var (
+		request    api.UpdateImpactTypeJSONRequestBody
+		impactType DbDef.ImpactType
+	)
+
+	err := ctx.Bind(&request)
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error binding update impact type request")
+
+		return echo.ErrInternalServerError
+	}
+
+	res := i.dbCon.Where("id = ?", impactTypeID).First(&impactType)
+
+	err = res.Error
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error receiving impact type for update")
+
+		return echo.ErrInternalServerError
+	}
+
+	i.logger.Debug().
+		Interface("src", request).
+		Interface("dst", impactType).
+		Str("id", impactTypeID).
+		Msg("updating impact type")
+
+	impactType.Update(&request)
+
+	res = i.dbCon.Save(&impactType)
+
+	err = res.Error
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error saving impact type after update")
+
+		return echo.ErrInternalServerError
+	}
+
+	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck
 }
