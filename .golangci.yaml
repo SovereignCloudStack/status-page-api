@@ -116,10 +116,11 @@ linters-settings:
     enable-all: true
   misspell:
     locale: US
-  revive:
-    var-naming: true
-    exported: true
+
+issues:
+  include:
+    - EXC0012
+    - EXC0014
 
 run:
   allow-parallel-runners: true
-
