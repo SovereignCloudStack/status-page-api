@@ -3,6 +3,7 @@ package logger
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -24,15 +25,15 @@ func (gl *GormLogger) LogMode(logger.LogLevel) logger.Interface { //nolint:iretu
 }
 
 func (gl *GormLogger) Info(_ context.Context, message string, data ...interface{}) {
-	gl.logger.Info().Interface("data", data).Msg(message)
+	gl.logger.Info().Msg(fmt.Sprintf(message, data...))
 }
 
 func (gl *GormLogger) Warn(_ context.Context, message string, data ...interface{}) {
-	gl.logger.Warn().Interface("data", data).Msg(message)
+	gl.logger.Warn().Msg(fmt.Sprintf(message, data...))
 }
 
 func (gl *GormLogger) Error(_ context.Context, message string, data ...interface{}) {
-	gl.logger.Error().Interface("data", data).Msg(message)
+	gl.logger.Error().Msg(fmt.Sprintf(message, data...))
 }
 
 func (gl *GormLogger) Trace(
