@@ -35,8 +35,8 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 		data[incidentIndex].Description = incident.Description
 		data[incidentIndex].BeganAt = incident.BeganAt
 		data[incidentIndex].EndedAt = incident.EndedAt
-		data[incidentIndex].Phase.Generation = *incident.Phase.Generation
-		data[incidentIndex].Phase.Order = *incident.Phase.Order
+		data[incidentIndex].Phase.Generation = incident.Phase.Generation
+		data[incidentIndex].Phase.Order = incident.Phase.Order
 		data[incidentIndex].Affects = incident.GetImpactComponentList()
 		data[incidentIndex].Updates = incident.GetIncidentUpdates()
 	}
@@ -75,8 +75,8 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 			BeganAt:     incident.BeganAt,
 			EndedAt:     incident.EndedAt,
 			Phase: &api.PhaseReference{
-				Generation: *incident.Phase.Generation,
-				Order:      *incident.Phase.Order,
+				Generation: incident.Phase.Generation,
+				Order:      incident.Phase.Order,
 			},
 			Affects: incident.GetImpactComponentList(),
 			Updates: incident.GetIncidentUpdates(),

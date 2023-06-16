@@ -61,7 +61,7 @@ func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 		}
 	}
 
-	if lastPhase.Order != nil && *lastPhase.Order == len(resources.Phases)-1 {
+	if lastPhase.Order == len(resources.Phases)-1 {
 		// db has been provisioned before
 		return nil
 	}
@@ -84,12 +84,12 @@ func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 
 	for phaseIndex := range resources.Phases {
 		phase := resources.Phases[phaseIndex]
-		phase.Order = &phaseOrder
-		phase.Generation = &initialPhaseGeneration
+		phase.Order = phaseOrder
+		phase.Generation = initialPhaseGeneration
 
 		err = dbCon.Save(&phase).Error
 		if err != nil {
-			return fmt.Errorf("error saving phase `%s`: %w", *phase.Name, err)
+			return fmt.Errorf("error saving phase `%s`: %w", phase.Name, err)
 		}
 
 		phaseOrder++

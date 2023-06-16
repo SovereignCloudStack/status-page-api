@@ -1,8 +1,6 @@
 package server
 
 import (
-	"fmt"
-
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 )
@@ -19,19 +17,4 @@ func New(dbCon *gorm.DB, logger *zerolog.Logger) *Implementation {
 		dbCon:  dbCon,
 		logger: logger,
 	}
-}
-
-func GetCurrentPhaseGeneration(dbCon *gorm.DB) (int, error) {
-	type Result struct {
-		Generation int
-	}
-
-	var result Result
-
-	res := dbCon.Table("phases").Select("MAX(generation) as Generation").Scan(&result)
-	if res.Error != nil {
-		return 0, fmt.Errorf("error getting current generation: %w", res.Error)
-	}
-
-	return result.Generation, nil
 }
