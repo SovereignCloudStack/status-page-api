@@ -12,6 +12,7 @@ type Component struct {
 	ActivelyAffectedBy *[]Impact        `gorm:"foreignKey:ComponentID"`
 }
 
+// GetImpactIncidentList converts the impact list.
 func (c *Component) GetImpactIncidentList() *api.ImpactIncidentList {
 	impacts := make(api.ImpactIncidentList, len(*c.ActivelyAffectedBy))
 
@@ -23,4 +24,15 @@ func (c *Component) GetImpactIncidentList() *api.ImpactIncidentList {
 	}
 
 	return &impacts
+}
+
+// Update updates the writable fields from an API request.
+func (c *Component) Update(component *api.Component) {
+	if component.DisplayName != nil {
+		c.DisplayName = component.DisplayName
+	}
+
+	if component.Labels != nil {
+		c.Labels = (*Labels)(component.Labels)
+	}
 }
