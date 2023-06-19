@@ -52,9 +52,7 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 
 // CreatePhaseList handles creation of phase lists.
 func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
-	var (
-		request api.CreatePhaseListJSONRequestBody
-	)
+	var request api.CreatePhaseListJSONRequestBody
 
 	err := ctx.Bind(&request)
 	if err != nil {

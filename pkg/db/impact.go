@@ -20,6 +20,7 @@ func (it *ImpactType) Update(impactType *api.ImpactType) {
 	}
 }
 
+// Impact connect a [Incident] with a [Component] and [ImpactType].
 type Impact struct {
 	Incident   *Incident   `gorm:"foreignKey:IncidentID"`
 	Component  *Component  `gorm:"foreignKey:ComponentID"`

@@ -13,10 +13,13 @@ import (
 // ID is the generally used identifier type. String type for UUIDs.
 type ID = uuid.UUID
 
+// Model sets the basic Data for all true database resources.
 type Model struct {
 	ID *ID `gorm:"primaryKey;type:uuid;"`
 }
 
+// BeforeCreate is a gorm hook to fill the ID field with a new UUID,
+// before an insert statement is send to the database.
 func (m *Model) BeforeCreate(_ *gorm.DB) error {
 	id := uuid.New()
 	m.ID = &id
@@ -94,6 +97,43 @@ func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 
 		phaseOrder++
 	}
+
+	// fiveMinsAgo := time.Now().Add(time.Duration(-5) * time.Minute)
+	// inFiveMins := time.Now().Add(time.Duration(5) * time.Minute) //nolint:gomnd
+
+	// // test incident
+	// err = dbCon.Save(&Incident{ //nolint:exhaustruct
+	// 	Affects:     []Component{*resources.Components[0]},
+	// 	BeganAt:     &fiveMinsAgo,
+	// 	Description: "Test incident",
+	// 	EndedAt:     &inFiveMins,
+	// 	ImpactType:  *resources.ImpactTypes[0],
+	// 	Phase:       *resources.Phases[0],
+	// 	Title:       "Test incident",
+	// 	Updates: []IncidentUpdate{{
+	// 		CreatedAt: fiveMinsAgo,
+	// 		Text:      "Happened",
+	// 	}},
+	// }).Error
+	// if err != nil {
+	// 	return fmt.Errorf("error saving test incident: %w", err)
+	// }
+
+	// err = dbCon.Save(&Incident{ //nolint:exhaustruct
+	// 	Affects:     []Component{*resources.Components[0]},
+	// 	BeganAt:     &fiveMinsAgo,
+	// 	Description: "Open Test incident",
+	// 	ImpactType:  *resources.ImpactTypes[0],
+	// 	Phase:       *resources.Phases[0],
+	// 	Title:       "Open Test incident",
+	// 	Updates: []IncidentUpdate{{
+	// 		CreatedAt: fiveMinsAgo,
+	// 		Text:      "Happened",
+	// 	}},
+	// }).Error
+	// if err != nil {
+	// 	return fmt.Errorf("error saving test incident: %w", err)
+	// }
 
 	return nil
 }

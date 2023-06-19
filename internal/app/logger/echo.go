@@ -6,10 +6,13 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// EchoLogger handles logging of Echo logs.
 type EchoLogger struct {
 	logger *zerolog.Logger
 }
 
+// RequestLogger is the default logging action in Echo.
+// Logged values must be configured via [middleware.RequestLoggerConfig].
 func (el *EchoLogger) RequestLogger(_ echo.Context, values middleware.RequestLoggerValues) error {
 	logger := el.logger.Info()
 	if values.Error != nil {
@@ -27,12 +30,16 @@ func (el *EchoLogger) RequestLogger(_ echo.Context, values middleware.RequestLog
 	return nil
 }
 
+// NewEchoLogger creates a new [EchoLogger].
 func NewEchoLogger(logger *zerolog.Logger) *EchoLogger {
 	return &EchoLogger{
 		logger: logger,
 	}
 }
 
+// NewEchoLoggerConfig creates the [echo.MiddlewareFunc] with
+// [middleware.RequestLoggerConfig] set up to log with
+// [EchoLogger.RequestLogger].
 func NewEchoLoggerConfig(logger *zerolog.Logger) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(
 		middleware.RequestLoggerConfig{ //nolint:exhaustruct

@@ -18,6 +18,7 @@ type Incident struct {
 	Updates         *[]IncidentUpdate `gorm:"foreignKey:IncidentID"`
 }
 
+// GetImpactComponentList converts the Affects list to an [api.ImpactComponentList].
 func (i *Incident) GetImpactComponentList() *api.ImpactComponentList {
 	impacts := make(api.ImpactComponentList, len(*i.Affects))
 
@@ -31,6 +32,7 @@ func (i *Incident) GetImpactComponentList() *api.ImpactComponentList {
 	return &impacts
 }
 
+// GetIncidentUpdates converts the Updates list to an [api.IncrementalList].
 func (i *Incident) GetIncidentUpdates() *api.IncrementalList {
 	updates := make(api.IncrementalList, len(*i.Updates))
 
