@@ -1,6 +1,9 @@
 package db
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 )
 
@@ -9,7 +12,7 @@ type Incident struct {
 	Model           `gorm:"embedded"`
 	DisplayName     *api.DisplayName
 	Description     *api.Description
-	Affects         *[]Impact `gorm:"foreignKey:IncidentID"`
+	Affects         *[]Impact `gorm:"foreignKey:IncidentID;constraint:OnDelete:CASCADE"`
 	BeganAt         *api.Date
 	EndedAt         *api.Date
 	PhaseGeneration *api.Incremental
@@ -41,6 +44,38 @@ func (i *Incident) GetIncidentUpdates() *api.IncrementalList {
 	}
 
 	return &updates
+}
+
+// IncidentFromAPI creates an [Incident] from an API request.
+func IncidentFromAPI(incidentRequest *api.Incident) (*Incident, error) {
+	if incidentRequest == nil {
+		return nil, ErrEmptyValue
+	}
+
+	affects, err := AffectsFromImpactComponentList(incidentRequest.Affects)
+	if err != nil {
+		if !errors.Is(err, ErrEmptyValue) {
+			return nil, fmt.Errorf("error parsing affects: %w", err)
+		}
+	}
+
+	phase, err := phaseReferenceFromAPI(incidentRequest.Phase)
+	if err != nil {
+		if !errors.Is(err, ErrEmptyValue) {
+			return nil, fmt.Errorf("error parsing phase: %w", err)
+		}
+	}
+
+	incident := Incident{ //nolint:exhaustruct
+		DisplayName: incidentRequest.DisplayName,
+		Description: incidentRequest.Description,
+		BeganAt:     incidentRequest.BeganAt,
+		EndedAt:     incidentRequest.EndedAt,
+		Phase:       phase,
+		Affects:     affects,
+	}
+
+	return &incident, nil
 }
 
 // IncidentUpdate describes a action that changes the incident.
