@@ -43,6 +43,7 @@ func NewEchoLogger(logger *zerolog.Logger) *EchoLogger {
 func NewEchoLoggerConfig(logger *zerolog.Logger) echo.MiddlewareFunc {
 	return middleware.RequestLoggerWithConfig(
 		middleware.RequestLoggerConfig{ //nolint:exhaustruct
+			Skipper:       middleware.DefaultSkipper,
 			LogLatency:    true,
 			LogRemoteIP:   true,
 			LogMethod:     true,
