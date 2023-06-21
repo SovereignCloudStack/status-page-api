@@ -10,28 +10,29 @@ import (
 
 // GetPhaseList retrieves a list of all phases.
 func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListParams) error {
-	var (
-		generation int
-		err        error
-	)
+	generation, err := i.getCurrentPhaseGeneration()
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error getting current phase generation")
 
-	// TODO: catch incorrect generations - 404 or 400
+		return echo.ErrInternalServerError
+	}
 
-	if params.Generation == nil {
-		generation, err = i.getCurrentPhaseGeneration()
-		if err != nil {
-			return echo.ErrInternalServerError
+	if params.Generation != nil {
+		if *params.Generation > generation || *params.Generation < 1 {
+			return echo.ErrNotFound
 		}
-	} else {
+
 		generation = *params.Generation
 	}
+
+	i.logger.Debug().Int("generation", generation).Msg("loading phase list")
 
 	var phases []*DbDef.Phase
 
 	res := i.dbCon.Where("generation = ?", generation).Order("\"order\" asc").Find(&phases)
+	if res.Error != nil {
+		i.logger.Error().Err(res.Error).Msg("error loading phase list")
 
-	err = res.Error
-	if err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
@@ -40,14 +41,12 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 		data[phaseIndex] = *phase.Name
 	}
 
-	response := api.PhaseListResponse{
+	return ctx.JSON(http.StatusOK, api.PhaseListResponse{ //nolint:wrapcheck
 		Data: &api.PhaseListResponseData{
 			Generation: generation,
 			Phases:     data,
 		},
-	}
-
-	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
+	})
 }
 
 // CreatePhaseList handles creation of phase lists.
@@ -96,7 +95,7 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
 
 func (i *Implementation) getCurrentPhaseGeneration() (int, error) {
 	var generation int
-	res := i.dbCon.Model(&DbDef.Phase{}).Select("MAX(generation)").Find(&generation) //nolint:exhaustruct
+	res := i.dbCon.Model(&DbDef.Phase{}).Select("COALESCE(MAX(generation), 0)").Find(&generation) //nolint:exhaustruct
 
 	return generation, res.Error
 }
