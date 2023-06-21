@@ -37,7 +37,7 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 
 	data := make([]api.Phase, len(phases))
 	for phaseIndex, phase := range phases {
-		data[phaseIndex] = phase.Name
+		data[phaseIndex] = *phase.Name
 	}
 
 	response := api.PhaseListResponse{
@@ -71,11 +71,14 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
 	i.logger.Debug().Interface("request", request).Int("generation", generation).Msg("creating phase list")
 
 	phases := make([]*DbDef.Phase, len(request.Phases))
-	for order, name := range request.Phases {
-		phases[order] = &DbDef.Phase{
-			Generation: generation,
-			Order:      order,
-			Name:       name,
+
+	for phaseIndex, phase := range request.Phases {
+		order := phaseIndex
+		name := phase
+		phases[phaseIndex] = &DbDef.Phase{
+			Generation: &generation,
+			Order:      &order,
+			Name:       &name,
 		}
 	}
 
