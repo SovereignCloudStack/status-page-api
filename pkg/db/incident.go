@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	"github.com/google/uuid"
 )
 
 // Incident represents an incident happening to one or more [Component].
@@ -85,4 +86,30 @@ type IncidentUpdate struct {
 	DisplayName *api.DisplayName
 	Description *api.Description
 	CreatedAt   *api.Date
+}
+
+// InicdentUpdateFromAPI creates an [IncidentUpdate] from an API request.
+func InicdentUpdateFromAPI(
+	incidentUpdateRequest *api.IncidentUpdate,
+	incidentID string,
+	order int,
+) (*IncidentUpdate, error) {
+	if incidentUpdateRequest == nil {
+		return nil, ErrEmptyValue
+	}
+
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing incident id: %w", err)
+	}
+
+	incidentUpdate := IncidentUpdate{
+		IncidentID:  &incidentUUID,
+		Order:       &order,
+		DisplayName: incidentUpdateRequest.DisplayName,
+		Description: incidentUpdateRequest.Description,
+		CreatedAt:   incidentUpdateRequest.CreatedAt,
+	}
+
+	return &incidentUpdate, nil
 }

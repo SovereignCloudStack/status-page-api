@@ -167,34 +167,170 @@ func (i *Implementation) UpdateIncident(ctx echo.Context, incidentID api.Inciden
 	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck
 }
 
-func (i *Implementation) GetIncidentUpdates(_ echo.Context, _ api.IncidentIdPathParameter) error {
-	return nil
+// GetIncidentUpdates retrieves a list of all updates for one incident.
+func (i *Implementation) GetIncidentUpdates(ctx echo.Context, incidentID api.IncidentIdPathParameter) error {
+	var incidentUpdates []DbDef.IncidentUpdate
+
+	res := i.dbCon.Where("incident_id = ?", incidentID).Find(&incidentUpdates)
+	if res.Error != nil {
+		i.logger.Error().Err(res.Error).Str("incidentID", incidentID).Msg("error loading incident updates")
+
+		return echo.ErrInternalServerError
+	}
+
+	data := make([]api.IncidentUpdateResponseData, len(incidentUpdates))
+
+	for incidentUpdateIndex, incidentUpdate := range incidentUpdates {
+		data[incidentUpdateIndex].Order = *incidentUpdate.Order
+		data[incidentUpdateIndex].DisplayName = incidentUpdate.DisplayName
+		data[incidentUpdateIndex].Description = incidentUpdate.Description
+		data[incidentUpdateIndex].CreatedAt = incidentUpdate.CreatedAt
+	}
+
+	return ctx.JSON(http.StatusOK, api.IncidentUpdateListResponse{ //nolint:wrapcheck
+		Data: &data,
+	})
 }
 
-func (i *Implementation) CreateIncidentUpdate(_ echo.Context, _ api.IncidentIdPathParameter) error {
-	return nil
+// CreateIncidentUpdate handles updates to an update for one incident.
+func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.IncidentIdPathParameter) error {
+	var request api.CreateIncidentUpdateJSONRequestBody
+
+	err := ctx.Bind(&request)
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error binding create incident update request")
+
+		return echo.ErrInternalServerError
+	}
+
+	order, err := i.getHighestIncidentUpdateOrder(incidentID)
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error getting current highest order of incident")
+
+		return echo.ErrInternalServerError
+	}
+
+	order++
+
+	i.logger.Debug().
+		Str("incidentID", incidentID).
+		Interface("request", request).
+		Int("order", order).
+		Msg("creating incident update")
+
+	incidentUpdate, err := DbDef.InicdentUpdateFromAPI(&request, incidentID, order)
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error parsing incident update request")
+
+		return echo.ErrInternalServerError
+	}
+
+	res := i.dbCon.Create(&incidentUpdate)
+	if res.Error != nil {
+		i.logger.Error().Err(res.Error).Msg("error creating incident update")
+
+		return echo.ErrInternalServerError
+	}
+
+	return ctx.JSON(http.StatusCreated, api.OrderResponse{ //nolint:wrapcheck
+		Order: order,
+	})
 }
 
+// DeleteIncidentUpdate handles deletion of an update for one incident.
 func (i *Implementation) DeleteIncidentUpdate(
-	_ echo.Context,
-	_ api.IncidentIdPathParameter,
-	_ api.IncidentUpdateOrderPathParameter,
+	ctx echo.Context,
+	incidentID api.IncidentIdPathParameter,
+	incidentUpdateOrder api.IncidentUpdateOrderPathParameter,
 ) error {
-	return nil
+	i.logger.Debug().Str("incidentID", incidentID).Int("updateOrder", incidentUpdateOrder).Msg("deleting incident update")
+
+	res := i.dbCon.
+		Where("incident_id = ?", incidentID).
+		Where("\"order\" = ?", incidentUpdateOrder).
+		Delete(&DbDef.IncidentUpdate{}) //nolint: exhaustruct
+	if res.Error != nil {
+		i.logger.Error().Err(res.Error).Msg("error deleting incident update")
+
+		return echo.ErrInternalServerError
+	}
+
+	if res.RowsAffected == 0 {
+		return echo.ErrNotFound
+	}
+
+	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck
 }
 
+// GetIncidentUpdate retrieves a specific update for one incident.
 func (i *Implementation) GetIncidentUpdate(
-	_ echo.Context,
-	_ api.IncidentIdPathParameter,
-	_ api.IncidentUpdateOrderPathParameter,
+	ctx echo.Context,
+	incidentID api.IncidentIdPathParameter,
+	incidentUpdateOrder api.IncidentUpdateOrderPathParameter,
 ) error {
-	return nil
+	var incidentUpdate DbDef.IncidentUpdate
+
+	i.logger.Debug().Str("incidentID", incidentID).Int("updateOrder", incidentUpdateOrder).Msg("loading incident update")
+
+	res := i.dbCon.Where("incident_id = ?", incidentID).Where("\"order\" = ?", incidentUpdateOrder).First(&incidentUpdate)
+	if res.Error != nil {
+		i.logger.Error().Err(res.Error).Msg("error loading incident update")
+
+		return echo.ErrInternalServerError
+	}
+
+	return ctx.JSON(http.StatusOK, api.IncidentUpdateResponse{ //nolint:wrapcheck
+		Data: &api.IncidentUpdateResponseData{
+			Order:       *incidentUpdate.Order,
+			DisplayName: incidentUpdate.DisplayName,
+			Description: incidentUpdate.Description,
+			CreatedAt:   incidentUpdate.CreatedAt,
+		},
+	})
 }
 
+// UpdateIncidentUpdate handles updates of updates for one incident.
 func (i *Implementation) UpdateIncidentUpdate(
-	_ echo.Context,
-	_ api.IncidentIdPathParameter,
-	_ api.IncidentUpdateOrderPathParameter,
+	ctx echo.Context,
+	incidentID api.IncidentIdPathParameter,
+	incidentUpdateOrder api.IncidentUpdateOrderPathParameter,
 ) error {
-	return nil
+	var request api.UpdateIncidentUpdateJSONRequestBody
+
+	err := ctx.Bind(&request)
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error binding update incident update request")
+
+		return echo.ErrInternalServerError
+	}
+
+	i.logger.Debug().
+		Str("incidentID", incidentID).
+		Int("incidentOrder", incidentUpdateOrder).
+		Interface("request", request).
+		Msg("updating incident update")
+
+	incidentUpdate, err := DbDef.InicdentUpdateFromAPI(&request, incidentID, incidentUpdateOrder)
+	if err != nil {
+		i.logger.Error().Err(err).Msg("error parsing update incident update request")
+	}
+
+	res := i.dbCon.Updates(&incidentUpdate)
+	if res.Error != nil {
+		i.logger.Error().Err(res.Error).Msg("error updating incident update")
+
+		return echo.ErrInternalServerError
+	}
+
+	return ctx.NoContent(http.StatusNoContent) //nolint: wrapcheck
+}
+
+func (i *Implementation) getHighestIncidentUpdateOrder(incidentID string) (int, error) {
+	var order int
+	res := i.dbCon.Model(&DbDef.IncidentUpdate{}). //nolint:exhaustruct
+							Select("COALESCE(MAX(\"order\"), -1)").
+							Where("incident_id = ?", incidentID).
+							Find(&order)
+
+	return order, res.Error
 }
