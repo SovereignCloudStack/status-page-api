@@ -21,8 +21,15 @@ type Model struct {
 // BeforeCreate is a gorm hook to fill the ID field with a new UUID,
 // before an insert statement is send to the database.
 func (m *Model) BeforeCreate(_ *gorm.DB) error {
-	id := uuid.New()
-	m.ID = &id
+	if m.ID == nil {
+		// pointer to id is nil
+		id := uuid.New()
+		m.ID = &id
+	} else if *m.ID == uuid.Nil {
+		// points to id but is empty id
+		id := uuid.New()
+		m.ID = &id
+	}
 
 	return nil
 }
