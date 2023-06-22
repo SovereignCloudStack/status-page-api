@@ -1,6 +1,9 @@
 package db
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 )
 
@@ -26,13 +29,24 @@ func (c *Component) GetImpactIncidentList() *api.ImpactIncidentList {
 	return &impacts
 }
 
-// Update updates the writable fields from an API request.
-func (c *Component) Update(component *api.Component) {
-	if component.DisplayName != nil {
-		c.DisplayName = component.DisplayName
+// ComponentFromAPI creates a [Component] from an API request.
+func ComponentFromAPI(componentRequest *api.Component) (*Component, error) {
+	if componentRequest == nil {
+		return nil, ErrEmptyValue
 	}
 
-	if component.Labels != nil {
-		c.Labels = (*Labels)(component.Labels)
+	activelyAffectedBy, err := ActivelyAffectedByFromImpactIncidentList(componentRequest.ActivelyAffectedBy)
+	if err != nil {
+		if !errors.Is(err, ErrEmptyValue) {
+			return nil, fmt.Errorf("error parsing actively affected by: %w", err)
+		}
 	}
+
+	component := Component{ //nolint:exhaustruct
+		DisplayName:        componentRequest.DisplayName,
+		Labels:             (*Labels)(componentRequest.Labels),
+		ActivelyAffectedBy: activelyAffectedBy,
+	}
+
+	return &component, nil
 }
