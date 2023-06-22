@@ -37,9 +37,9 @@ func (m *Model) BeforeCreate(_ *gorm.DB) error {
 // Provision initializes the database with the contents of the provision file.
 func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 	type ProvisionedResources struct {
-		Components  []*Component  `yaml:"components"`
-		ImpactTypes []*ImpactType `yaml:"impactTypes"`
-		Phases      []*Phase      `yaml:"phases"`
+		Components  []Component  `yaml:"components"`
+		ImpactTypes []ImpactType `yaml:"impactTypes"`
+		Phases      []Phase      `yaml:"phases"`
 	}
 
 	file, err := os.Open(filename)
@@ -71,38 +71,31 @@ func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 		}
 	}
 
-	if *lastPhase.Order == len(resources.Phases)-1 {
+	if lastPhase.Order != nil && *lastPhase.Order == len(resources.Phases)-1 {
 		// db has been provisioned before
 		return nil
 	}
 
-	for _, component := range resources.Components {
-		err = dbCon.Save(component).Error
-		if err != nil {
-			return fmt.Errorf("error saving component `%s`: %w", *component.DisplayName, err)
-		}
+	res = dbCon.Create(&resources.Components)
+	if res.Error != nil {
+		return fmt.Errorf("error saving components: %w", res.Error)
 	}
 
-	for _, impactType := range resources.ImpactTypes {
-		err = dbCon.Save(impactType).Error
-		if err != nil {
-			return fmt.Errorf("error saving impact type `%s`: %w", *impactType.DisplayName, err)
-		}
+	res = dbCon.Create(&resources.ImpactTypes)
+	if res.Error != nil {
+		return fmt.Errorf("error saving impact types: %w", res.Error)
 	}
-
-	var phaseOrder int
 
 	for phaseIndex := range resources.Phases {
-		phase := resources.Phases[phaseIndex]
-		phase.Order = &phaseOrder
-		phase.Generation = &initialPhaseGeneration
+		order := phaseIndex
 
-		err = dbCon.Save(&phase).Error
-		if err != nil {
-			return fmt.Errorf("error saving phase `%v`: %w", phase.Name, err)
-		}
+		resources.Phases[phaseIndex].Order = &order
+		resources.Phases[phaseIndex].Generation = &initialPhaseGeneration
+	}
 
-		phaseOrder++
+	res = dbCon.Create(&resources.Phases)
+	if res.Error != nil {
+		return fmt.Errorf("error saving phases: %w", res.Error)
 	}
 
 	return nil
