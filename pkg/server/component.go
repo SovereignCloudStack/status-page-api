@@ -6,6 +6,7 @@ import (
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -13,8 +14,11 @@ import (
 func (i *Implementation) GetComponents(ctx echo.Context) error {
 	var components []*DbDef.Component
 
-	// TODO: only load active impacts for components.
-	res := i.dbCon.Preload(clause.Associations).Find(&components)
+	i.logger.Debug().Msg("laoding components")
+
+	res := i.dbCon.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
+		return db.Joins("Incident").Where("ended_at IS NULL")
+	}).Find(&components)
 
 	err := res.Error
 	if err != nil {
