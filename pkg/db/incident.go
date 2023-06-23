@@ -22,6 +22,23 @@ type Incident struct {
 	Updates         *[]IncidentUpdate `gorm:"foreignKey:IncidentID"`
 }
 
+// ToAPIResponse converts to API response.
+func (i *Incident) ToAPIResponse() *api.IncidentResponseData {
+	return &api.IncidentResponseData{
+		Id:          i.ID.String(),
+		DisplayName: i.DisplayName,
+		Description: i.Description,
+		BeganAt:     i.BeganAt,
+		EndedAt:     i.EndedAt,
+		Phase: &api.PhaseReference{
+			Generation: *i.Phase.Generation,
+			Order:      *i.Phase.Order,
+		},
+		Affects: i.GetImpactComponentList(),
+		Updates: i.GetIncidentUpdates(),
+	}
+}
+
 // GetImpactComponentList converts the Affects list to an [api.ImpactComponentList].
 func (i *Incident) GetImpactComponentList() *api.ImpactComponentList {
 	impacts := make(api.ImpactComponentList, len(*i.Affects))
@@ -86,6 +103,16 @@ type IncidentUpdate struct {
 	DisplayName *api.DisplayName
 	Description *api.Description
 	CreatedAt   *api.Date
+}
+
+// ToAPIResponse converts to API response.
+func (iu *IncidentUpdate) ToAPIResponse() *api.IncidentUpdateResponseData {
+	return &api.IncidentUpdateResponseData{
+		Order:       *iu.Order,
+		DisplayName: iu.DisplayName,
+		Description: iu.Description,
+		CreatedAt:   iu.CreatedAt,
+	}
 }
 
 // InicdentUpdateFromAPI creates an [IncidentUpdate] from an API request.
