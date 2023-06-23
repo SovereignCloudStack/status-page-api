@@ -38,7 +38,7 @@ func (i *Implementation) GetComponents(ctx echo.Context) error {
 }
 
 // CreateComponent handles creation of components.
-func (i *Implementation) CreateComponent(ctx echo.Context) error {
+func (i *Implementation) CreateComponent(ctx echo.Context) error { //nolint:dupl
 	var request api.CreateComponentJSONRequestBody
 
 	logger := i.logger.With().Str("handler", "CreateComponent").Logger()
@@ -59,7 +59,7 @@ func (i *Implementation) CreateComponent(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	res := i.dbCon.Save(&component)
+	res := i.dbCon.Create(&component)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error creating component")
 

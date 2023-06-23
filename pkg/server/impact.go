@@ -20,7 +20,7 @@ func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error loading impact types")
 
-		return echo.NewHTTPError(http.StatusInternalServerError)
+		return echo.ErrInternalServerError
 	}
 
 	data := make([]api.ImpactTypeResponseData, len(impactTypes))
@@ -34,7 +34,7 @@ func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 }
 
 // CreateImpactType handles creation of impact types.
-func (i *Implementation) CreateImpactType(ctx echo.Context) error {
+func (i *Implementation) CreateImpactType(ctx echo.Context) error { //nolint:dupl
 	var request api.CreateImpactTypeJSONRequestBody
 
 	logger := i.logger.With().Str("handler", "CreateImpactType").Logger()
@@ -55,7 +55,7 @@ func (i *Implementation) CreateImpactType(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	res := i.dbCon.Save(&impactType)
+	res := i.dbCon.Create(&impactType)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error creating impact type")
 
@@ -132,7 +132,7 @@ func (i *Implementation) UpdateImpactType(ctx echo.Context, impactTypeID api.Imp
 
 	impactType.ID = &impactTypeUUID
 
-	res := i.dbCon.Save(&impactType)
+	res := i.dbCon.Updates(&impactType)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error updating impact type")
 
