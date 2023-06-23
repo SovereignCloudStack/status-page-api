@@ -14,15 +14,25 @@ type ImpactType struct {
 	Description *api.Description `yaml:"description"`
 }
 
-// Update updates the writables fields from an API request.
-func (it *ImpactType) Update(impactType *api.ImpactType) {
-	if impactType.DisplayName != nil {
-		it.DisplayName = impactType.DisplayName
+// ToAPIResponse converts to API response.
+func (it *ImpactType) ToAPIResponse() *api.ImpactTypeResponseData {
+	return &api.ImpactTypeResponseData{
+		Id:          it.ID.String(),
+		DisplayName: it.DisplayName,
+		Description: it.Description,
+	}
+}
+
+// ImpactTypeFromAPI creates an [ImpactType] from an API request.
+func ImpactTypeFromAPI(impactTypeRequest *api.ImpactType) (*ImpactType, error) {
+	if impactTypeRequest == nil {
+		return nil, ErrEmptyValue
 	}
 
-	if impactType.Description != nil {
-		it.Description = impactType.Description
-	}
+	return &ImpactType{ //nolint:exhaustruct
+		DisplayName: impactTypeRequest.DisplayName,
+		Description: impactTypeRequest.Description,
+	}, nil
 }
 
 // Impact connect a [Incident] with a [Component] and [ImpactType].

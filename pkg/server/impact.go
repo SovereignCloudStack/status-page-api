@@ -5,6 +5,7 @@ import (
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
 
@@ -12,50 +13,51 @@ import (
 func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 	var impactTypes []*DbDef.ImpactType
 
-	res := i.dbCon.Find(&impactTypes)
+	logger := i.logger.With().Str("handler", "GetImpactTypes").Logger()
+	logger.Debug().Send()
 
-	err := res.Error
-	if err != nil {
+	res := i.dbCon.Find(&impactTypes)
+	if res.Error != nil {
+		logger.Error().Err(res.Error).Msg("error loading impact types")
+
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
 	data := make([]api.ImpactTypeResponseData, len(impactTypes))
 	for impactTypeIndex, impactType := range impactTypes {
-		data[impactTypeIndex].Id = impactType.ID.String()
-		data[impactTypeIndex].DisplayName = impactType.DisplayName
-		data[impactTypeIndex].Description = impactType.Description
+		data[impactTypeIndex] = *impactType.ToAPIResponse()
 	}
 
-	response := api.ImpactTypeListResponse{
+	return ctx.JSON(http.StatusOK, api.ImpactTypeListResponse{ //nolint:wrapcheck
 		Data: &data,
-	}
-
-	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
+	})
 }
 
 // CreateImpactType handles creation of impact types.
 func (i *Implementation) CreateImpactType(ctx echo.Context) error {
 	var request api.CreateImpactTypeJSONRequestBody
 
+	logger := i.logger.With().Str("handler", "CreateImpactType").Logger()
+
 	err := ctx.Bind(&request)
 	if err != nil {
-		i.logger.Error().Err(err).Msg("error binding create impact type request")
+		logger.Error().Err(err).Msg("error binding request")
 
 		return echo.ErrInternalServerError
 	}
 
-	i.logger.Debug().Interface("request", request).Msg("creating impact type")
+	logger.Debug().Interface("request", request).Send()
 
-	impactType := DbDef.ImpactType{ //nolint:exhaustruct
-		DisplayName: request.DisplayName,
-		Description: request.Description,
+	impactType, err := DbDef.ImpactTypeFromAPI(&request)
+	if err != nil {
+		logger.Error().Err(err).Msg("error parsing request")
+
+		return echo.ErrInternalServerError
 	}
 
 	res := i.dbCon.Save(&impactType)
-
-	err = res.Error
-	if err != nil {
-		i.logger.Error().Err(err).Msg("error creating impact type")
+	if res.Error != nil {
+		logger.Error().Err(res.Error).Msg("error creating impact type")
 
 		return echo.ErrInternalServerError
 	}
@@ -67,12 +69,12 @@ func (i *Implementation) CreateImpactType(ctx echo.Context) error {
 
 // DeleteImpactType handles deletion of impact types.
 func (i *Implementation) DeleteImpactType(ctx echo.Context, impactTypeID api.ImpactTypeIdPathParameter) error {
-	i.logger.Debug().Str("id", impactTypeID).Msg("deleting impact type")
-	res := i.dbCon.Where("id = ?", impactTypeID).Delete(&DbDef.ImpactType{}) //nolint: exhaustruct
+	logger := i.logger.With().Str("handler", "DeleteImpactType").Str("id", impactTypeID).Logger()
+	logger.Debug().Send()
 
-	err := res.Error
-	if err != nil {
-		i.logger.Error().Err(err).Msg("error deleting impact type")
+	res := i.dbCon.Where("id = ?", impactTypeID).Delete(&DbDef.ImpactType{}) //nolint: exhaustruct
+	if res.Error != nil {
+		logger.Error().Err(res.Error).Msg("error deleting impact type")
 
 		return echo.ErrInternalServerError
 	}
@@ -88,62 +90,51 @@ func (i *Implementation) DeleteImpactType(ctx echo.Context, impactTypeID api.Imp
 func (i *Implementation) GetImpactType(ctx echo.Context, impactTypeID api.ImpactTypeIdPathParameter) error {
 	var impactType DbDef.ImpactType
 
-	res := i.dbCon.Where("id = ?", impactTypeID).First(&impactType)
+	logger := i.logger.With().Str("handler", "GetImpactType").Str("id", impactTypeID).Logger()
+	logger.Debug().Send()
 
-	err := res.Error
-	if err != nil {
-		i.logger.Error().Err(err).Msg("error retrieving impact type")
+	res := i.dbCon.Where("id = ?", impactTypeID).First(&impactType)
+	if res.Error != nil {
+		logger.Error().Err(res.Error).Msg("error loading impact type")
 
 		return echo.ErrInternalServerError
 	}
 
-	response := api.ImpactTypeResponse{
-		Data: &api.ImpactTypeResponseData{
-			Id:          impactType.ID.String(),
-			DisplayName: impactType.DisplayName,
-			Description: impactType.Description,
-		},
-	}
-
-	return ctx.JSON(http.StatusOK, response) //nolint:wrapcheck
+	return ctx.JSON(http.StatusOK, api.ImpactTypeResponse{ //nolint:wrapcheck
+		Data: impactType.ToAPIResponse(),
+	})
 }
 
 // UpdateImpactType handles updates of impact types.
 func (i *Implementation) UpdateImpactType(ctx echo.Context, impactTypeID api.ImpactTypeIdPathParameter) error {
-	var (
-		request    api.UpdateImpactTypeJSONRequestBody
-		impactType DbDef.ImpactType
-	)
+	var request api.UpdateImpactTypeJSONRequestBody
+
+	logger := i.logger.With().Str("handler", "UpdateImpactType").Str("id", impactTypeID).Logger()
 
 	err := ctx.Bind(&request)
 	if err != nil {
-		i.logger.Error().Err(err).Msg("error binding update impact type request")
+		logger.Error().Err(err).Msg("error binding request")
 
 		return echo.ErrInternalServerError
 	}
 
-	res := i.dbCon.Where("id = ?", impactTypeID).First(&impactType)
+	logger.Debug().Interface("request", request).Send()
 
-	err = res.Error
+	impactType, err := DbDef.ImpactTypeFromAPI(&request)
 	if err != nil {
-		i.logger.Error().Err(err).Msg("error receiving impact type for update")
-
-		return echo.ErrInternalServerError
+		logger.Error().Err(err).Msg("error parsing request")
 	}
 
-	i.logger.Debug().
-		Interface("src", request).
-		Interface("dst", impactType).
-		Str("id", impactTypeID).
-		Msg("updating impact type")
-
-	impactType.Update(&request)
-
-	res = i.dbCon.Save(&impactType)
-
-	err = res.Error
+	impactTypeUUID, err := uuid.Parse(impactTypeID)
 	if err != nil {
-		i.logger.Error().Err(err).Msg("error saving impact type after update")
+		logger.Error().Err(err).Msg("error parsing id")
+	}
+
+	impactType.ID = &impactTypeUUID
+
+	res := i.dbCon.Save(&impactType)
+	if res.Error != nil {
+		logger.Error().Err(res.Error).Msg("error updating impact type")
 
 		return echo.ErrInternalServerError
 	}
