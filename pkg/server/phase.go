@@ -76,6 +76,7 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
 	logger.Debug().Interface("request", request).Int("generation", generation).Send()
 
 	phases := make([]DbDef.Phase, len(request.Phases))
+
 	for phaseIndex, phase := range request.Phases {
 		order := phaseIndex
 		name := phase
