@@ -10,9 +10,11 @@ import (
 
 // GetPhaseList retrieves a list of all phases.
 func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListParams) error {
+	logger := i.logger.With().Str("handler", "GetPhaseList").Logger()
+
 	generation, err := i.getCurrentPhaseGeneration()
 	if err != nil {
-		i.logger.Error().Err(err).Msg("error getting current phase generation")
+		logger.Error().Err(err).Msg("error getting current generation")
 
 		return echo.ErrInternalServerError
 	}
@@ -25,15 +27,15 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 		generation = *params.Generation
 	}
 
-	i.logger.Debug().Int("generation", generation).Msg("loading phase list")
+	logger.Debug().Int("generation", generation).Send()
 
 	var phases []*DbDef.Phase
 
 	res := i.dbCon.Where("generation = ?", generation).Order("\"order\" asc").Find(&phases)
 	if res.Error != nil {
-		i.logger.Error().Err(res.Error).Msg("error loading phase list")
+		logger.Error().Err(res.Error).Msg("error loading phase list")
 
-		return echo.NewHTTPError(http.StatusInternalServerError)
+		return echo.ErrInternalServerError
 	}
 
 	data := make([]api.Phase, len(phases))
@@ -53,28 +55,32 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
 	var request api.CreatePhaseListJSONRequestBody
 
+	logger := i.logger.With().Str("handler", "CreatePhaseList").Logger()
+
 	err := ctx.Bind(&request)
 	if err != nil {
-		i.logger.Error().Err(err).Msg("error binding create phase list request")
+		logger.Error().Err(err).Msg("error binding request")
 
 		return echo.ErrInternalServerError
 	}
 
 	generation, err := i.getCurrentPhaseGeneration()
 	if err != nil {
-		i.logger.Error().Err(err).Msg("error getting current phase generation")
+		logger.Error().Err(err).Msg("error getting current phase generation")
+
+		return echo.ErrInternalServerError
 	}
 
 	generation++
 
-	i.logger.Debug().Interface("request", request).Int("generation", generation).Msg("creating phase list")
+	logger.Debug().Interface("request", request).Int("generation", generation).Send()
 
-	phases := make([]*DbDef.Phase, len(request.Phases))
-
+	phases := make([]DbDef.Phase, len(request.Phases))
 	for phaseIndex, phase := range request.Phases {
 		order := phaseIndex
 		name := phase
-		phases[phaseIndex] = &DbDef.Phase{
+
+		phases[phaseIndex] = DbDef.Phase{
 			Generation: &generation,
 			Order:      &order,
 			Name:       &name,
@@ -83,7 +89,7 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
 
 	res := i.dbCon.Create(phases)
 	if res.Error != nil {
-		i.logger.Error().Err(res.Error).Msg("error creating phase list")
+		logger.Error().Err(res.Error).Msg("error creating phase list")
 
 		return echo.ErrInternalServerError
 	}
@@ -95,7 +101,10 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
 
 func (i *Implementation) getCurrentPhaseGeneration() (int, error) {
 	var generation int
-	res := i.dbCon.Model(&DbDef.Phase{}).Select("COALESCE(MAX(generation), 0)").Find(&generation) //nolint:exhaustruct
+	res := i.dbCon.
+		Model(&DbDef.Phase{}). //nolint:exhaustruct
+		Select("COALESCE(MAX(generation), 0)").
+		Find(&generation)
 
 	return generation, res.Error
 }
