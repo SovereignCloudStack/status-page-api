@@ -15,7 +15,6 @@ func (i *Implementation) GetComponents(ctx echo.Context) error {
 	var components []*DbDef.Component
 
 	logger := i.logger.With().Str("handler", "GetComponents").Logger()
-
 	logger.Debug().Send()
 
 	res := i.dbCon.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
@@ -30,10 +29,7 @@ func (i *Implementation) GetComponents(ctx echo.Context) error {
 
 	data := make([]api.ComponentResponseData, len(components))
 	for componentIndex, component := range components {
-		data[componentIndex].Id = component.ID.String()
-		data[componentIndex].DisplayName = component.DisplayName
-		data[componentIndex].Labels = (*api.Labels)(component.Labels)
-		data[componentIndex].ActivelyAffectedBy = component.GetImpactIncidentList()
+		data[componentIndex] = *component.ToAPIResponse()
 	}
 
 	return ctx.JSON(http.StatusOK, api.ComponentListResponse{ //nolint:wrapcheck
@@ -78,7 +74,6 @@ func (i *Implementation) CreateComponent(ctx echo.Context) error {
 // DeleteComponent handles deletion of components.
 func (i *Implementation) DeleteComponent(ctx echo.Context, componentID api.ComponentIdPathParameter) error {
 	logger := i.logger.With().Str("handler", "DeleteComponent").Str("id", componentID).Logger()
-
 	logger.Debug().Send()
 
 	res := i.dbCon.Where("id = ?", componentID).Delete(&DbDef.Component{}) //nolint: exhaustruct
@@ -100,7 +95,6 @@ func (i *Implementation) GetComponent(ctx echo.Context, componentID string) erro
 	var component DbDef.Component
 
 	logger := i.logger.With().Str("handler", "GetComponent").Str("id", componentID).Logger()
-
 	logger.Debug().Send()
 
 	res := i.dbCon.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
@@ -113,12 +107,7 @@ func (i *Implementation) GetComponent(ctx echo.Context, componentID string) erro
 	}
 
 	return ctx.JSON(http.StatusOK, api.ComponentResponse{ //nolint:wrapcheck
-		Data: &api.ComponentResponseData{
-			Id:                 component.ID.String(),
-			DisplayName:        component.DisplayName,
-			Labels:             (*api.Labels)(component.Labels),
-			ActivelyAffectedBy: component.GetImpactIncidentList(),
-		},
+		Data: component.ToAPIResponse(),
 	})
 }
 

@@ -15,6 +15,16 @@ type Component struct {
 	ActivelyAffectedBy *[]Impact        `gorm:"foreignKey:ComponentID"`
 }
 
+// ToAPIResponse converts to API response.
+func (c *Component) ToAPIResponse() *api.ComponentResponseData {
+	return &api.ComponentResponseData{
+		Id:                 c.ID.String(),
+		DisplayName:        c.DisplayName,
+		Labels:             (*api.Labels)(c.Labels),
+		ActivelyAffectedBy: c.GetImpactIncidentList(),
+	}
+}
+
 // GetImpactIncidentList converts the impact list.
 func (c *Component) GetImpactIncidentList() *api.ImpactIncidentList {
 	impacts := make(api.ImpactIncidentList, len(*c.ActivelyAffectedBy))
