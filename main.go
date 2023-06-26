@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"os"
 	"strings"
 	"time"
@@ -15,13 +14,14 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/pflag"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() { //nolint:funlen
 	// setup logging
-	zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	zerolog.SetGlobalLevel(zerolog.WarnLevel)
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{ //nolint:exhaustruct
 		Out:        os.Stderr,
@@ -33,28 +33,43 @@ func main() { //nolint:funlen
 	handlerLogger := log.With().Str("component", "handler").Logger()
 
 	// Reading config
-	dbDsn := flag.String(
+	dbDsn := pflag.String(
 		"postgres-dsn",
 		"host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable",
 		"DB dsn",
 	)
-	provisioningFile := flag.String(
+	provisioningFile := pflag.String(
 		"provisioning-file",
 		"./provisioning.yaml",
 		"YAML file containing components etc. to be provisioned on startup",
 	)
-	addr := flag.String(
+	addr := pflag.String(
 		"addr",
 		":3000",
 		"Address to listen on",
 	)
-	corsOrigins := flag.String(
+	corsOrigins := pflag.String(
 		"cors-origins",
 		"127.0.0.1,localhost",
 		"Allowed CORS origins, separated by ','",
 	)
+	verbose := pflag.CountP(
+		"verbose",
+		"v",
+		"Increase log level",
+	)
 
-	flag.Parse()
+	pflag.Parse()
+
+	// leveled logging
+	switch *verbose {
+	case 1:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case 2: //nolint:gomnd
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case 3: //nolint:gomnd
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	}
 
 	// HTTP setup
 	echoServer := echo.New()
@@ -101,6 +116,6 @@ func main() { //nolint:funlen
 	api.RegisterHandlers(echoServer, server.New(dbCon, &handlerLogger))
 
 	// Starting server
-	log.Info().Str("address", *addr).Msg("server start listening")
+	log.Log().Str("address", *addr).Msg("server start listening")
 	log.Fatal().Err(echoServer.Start(*addr)).Msg("error running server")
 }
