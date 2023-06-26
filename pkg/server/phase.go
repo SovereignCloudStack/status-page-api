@@ -12,7 +12,7 @@ import (
 func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListParams) error {
 	logger := i.logger.With().Str("handler", "GetPhaseList").Logger()
 
-	generation, err := i.getCurrentPhaseGeneration()
+	generation, err := DbDef.GetCurrentPhaseGeneration(i.dbCon)
 	if err != nil {
 		logger.Error().Err(err).Msg("error getting current generation")
 
@@ -21,6 +21,8 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 
 	if params.Generation != nil {
 		if *params.Generation > generation || *params.Generation < 1 {
+			logger.Warn().Msg("phase generation not found")
+
 			return echo.ErrNotFound
 		}
 
@@ -64,7 +66,7 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	generation, err := i.getCurrentPhaseGeneration()
+	generation, err := DbDef.GetCurrentPhaseGeneration(i.dbCon)
 	if err != nil {
 		logger.Error().Err(err).Msg("error getting current phase generation")
 
@@ -98,14 +100,4 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error {
 	return ctx.JSON(http.StatusCreated, api.GenerationResponse{ //nolint:wrapcheck
 		Generation: generation,
 	})
-}
-
-func (i *Implementation) getCurrentPhaseGeneration() (int, error) {
-	var generation int
-	res := i.dbCon.
-		Model(&DbDef.Phase{}). //nolint:exhaustruct
-		Select("COALESCE(MAX(generation), 0)").
-		Find(&generation)
-
-	return generation, res.Error
 }

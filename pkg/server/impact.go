@@ -1,12 +1,14 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
 // GetImpactTypes retrieves a list of all impact types.
@@ -80,6 +82,8 @@ func (i *Implementation) DeleteImpactType(ctx echo.Context, impactTypeID api.Imp
 	}
 
 	if res.RowsAffected == 0 {
+		logger.Warn().Msg("impact type not found")
+
 		return echo.ErrNotFound
 	}
 
@@ -95,6 +99,12 @@ func (i *Implementation) GetImpactType(ctx echo.Context, impactTypeID api.Impact
 
 	res := i.dbCon.Where("id = ?", impactTypeID).First(&impactType)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			logger.Warn().Msg("impact type not found")
+
+			return echo.ErrNotFound
+		}
+
 		logger.Error().Err(res.Error).Msg("error loading impact type")
 
 		return echo.ErrInternalServerError
@@ -137,6 +147,12 @@ func (i *Implementation) UpdateImpactType(ctx echo.Context, impactTypeID api.Imp
 		logger.Error().Err(res.Error).Msg("error updating impact type")
 
 		return echo.ErrInternalServerError
+	}
+
+	if res.RowsAffected == 0 {
+		logger.Warn().Msg("impact type not found")
+
+		return echo.ErrNotFound
 	}
 
 	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck

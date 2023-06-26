@@ -1,12 +1,14 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
@@ -17,10 +19,28 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 	logger := i.logger.With().Str("handler", "GetIncidents").Logger()
 	logger.Debug().Time("start", params.Start).Time("end", params.End).Send()
 
-	res := i.dbCon.Preload("Affects.Component").Preload(clause.Associations).
-		Where(i.dbCon.Not(i.dbCon.Where("began_at < ?", params.Start).Where("ended_at < ?", params.Start))).
-		Where(i.dbCon.Not(i.dbCon.Where("began_at > ?", params.End).Where("ended_at > ?", params.End))).
-		Or(i.dbCon.Where("ended_at IS NULL").Where("began_at <= ?", params.End)).
+	if params.Start.IsZero() || params.End.IsZero() {
+		return echo.ErrBadRequest
+	}
+
+	if params.End.Before(params.Start) {
+		return echo.ErrBadRequest
+	}
+
+	res := i.dbCon.
+		Preload("Affects.Component").
+		Preload(clause.Associations).
+		Where(i.dbCon.
+			Not(i.dbCon.
+				Where("began_at < ?", params.Start).
+				Where("ended_at < ?", params.Start))).
+		Where(i.dbCon.
+			Not(i.dbCon.
+				Where("began_at > ?", params.End).
+				Where("ended_at > ?", params.End))).
+		Or(i.dbCon.
+			Where("ended_at IS NULL").
+			Where("began_at <= ?", params.End)).
 		Find(&incidents)
 
 	if res.Error != nil {
@@ -86,6 +106,8 @@ func (i *Implementation) DeleteIncident(ctx echo.Context, incidentID api.Inciden
 	}
 
 	if res.RowsAffected == 0 {
+		logger.Warn().Msg("incident not found")
+
 		return echo.ErrNotFound
 	}
 
@@ -101,6 +123,12 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 
 	res := i.dbCon.Preload("Affects.Component").Preload(clause.Associations).Where("id = ?", incidentID).First(&incident)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			logger.Warn().Msg("incident not found")
+
+			return echo.ErrNotFound
+		}
+
 		logger.Error().Err(res.Error).Msg("error loading incident")
 
 		return echo.NewHTTPError(http.StatusInternalServerError)
@@ -149,6 +177,12 @@ func (i *Implementation) UpdateIncident(ctx echo.Context, incidentID api.Inciden
 		return echo.ErrInternalServerError
 	}
 
+	if res.RowsAffected == 0 {
+		logger.Warn().Msg("incident not found")
+
+		return echo.ErrNotFound
+	}
+
 	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck
 }
 
@@ -189,7 +223,7 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 		return echo.ErrInternalServerError
 	}
 
-	order, err := i.getHighestIncidentUpdateOrder(incidentID)
+	order, err := DbDef.GetHighestIncidentUpdateOrder(i.dbCon, incidentID)
 	if err != nil {
 		logger.Error().Err(err).Msg("error getting current highest order of incident")
 
@@ -243,6 +277,8 @@ func (i *Implementation) DeleteIncidentUpdate(
 	}
 
 	if res.RowsAffected == 0 {
+		logger.Warn().Msg("incident update not found")
+
 		return echo.ErrNotFound
 	}
 
@@ -269,6 +305,12 @@ func (i *Implementation) GetIncidentUpdate(
 		Where("\"order\" = ?", incidentUpdateOrder).
 		First(&incidentUpdate)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			logger.Warn().Msg("incident update not found")
+
+			return echo.ErrNotFound
+		}
+
 		logger.Error().Err(res.Error).Msg("error loading incident update")
 
 		return echo.ErrInternalServerError
@@ -318,16 +360,11 @@ func (i *Implementation) UpdateIncidentUpdate(
 		return echo.ErrInternalServerError
 	}
 
+	if res.RowsAffected == 0 {
+		logger.Warn().Msg("incident update not found")
+
+		return echo.ErrNotFound
+	}
+
 	return ctx.NoContent(http.StatusNoContent) //nolint: wrapcheck
-}
-
-func (i *Implementation) getHighestIncidentUpdateOrder(incidentID string) (int, error) {
-	var order int
-	res := i.dbCon.
-		Model(&DbDef.IncidentUpdate{}). //nolint:exhaustruct
-		Select("COALESCE(MAX(\"order\"), -1)").
-		Where("incident_id = ?", incidentID).
-		Find(&order)
-
-	return order, res.Error
 }

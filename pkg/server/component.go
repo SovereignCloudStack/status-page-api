@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
@@ -84,6 +85,8 @@ func (i *Implementation) DeleteComponent(ctx echo.Context, componentID api.Compo
 	}
 
 	if res.RowsAffected == 0 {
+		logger.Warn().Msg("component not found")
+
 		return echo.ErrNotFound
 	}
 
@@ -101,6 +104,12 @@ func (i *Implementation) GetComponent(ctx echo.Context, componentID string) erro
 		return db.Joins("Incident").Where("ended_at IS NULL")
 	}).Where("id = ?", componentID).First(&component)
 	if res.Error != nil {
+		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
+			logger.Warn().Msg("component not found")
+
+			return echo.ErrNotFound
+		}
+
 		logger.Error().Err(res.Error).Msg("error loading component")
 
 		return echo.ErrInternalServerError
@@ -145,6 +154,12 @@ func (i *Implementation) UpdateComponent(ctx echo.Context, componentID api.Compo
 		logger.Error().Err(res.Error).Msg("error updating component")
 
 		return echo.ErrInternalServerError
+	}
+
+	if res.RowsAffected == 0 {
+		logger.Warn().Msg("component not found")
+
+		return echo.ErrNotFound
 	}
 
 	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck
