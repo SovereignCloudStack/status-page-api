@@ -46,7 +46,7 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 	}
 
 	return ctx.JSON(http.StatusOK, api.PhaseListResponse{ //nolint:wrapcheck
-		Data: &api.PhaseListResponseData{
+		Data: api.PhaseListResponseData{
 			Generation: generation,
 			Phases:     data,
 		},

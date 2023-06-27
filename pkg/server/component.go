@@ -30,11 +30,11 @@ func (i *Implementation) GetComponents(ctx echo.Context) error {
 
 	data := make([]api.ComponentResponseData, len(components))
 	for componentIndex, component := range components {
-		data[componentIndex] = *component.ToAPIResponse()
+		data[componentIndex] = component.ToAPIResponse()
 	}
 
 	return ctx.JSON(http.StatusOK, api.ComponentListResponse{ //nolint:wrapcheck
-		Data: &data,
+		Data: data,
 	})
 }
 

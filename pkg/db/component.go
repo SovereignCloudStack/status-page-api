@@ -16,8 +16,8 @@ type Component struct {
 }
 
 // ToAPIResponse converts to API response.
-func (c *Component) ToAPIResponse() *api.ComponentResponseData {
-	return &api.ComponentResponseData{
+func (c *Component) ToAPIResponse() api.ComponentResponseData {
+	return api.ComponentResponseData{
 		Id:                 c.ID.String(),
 		DisplayName:        c.DisplayName,
 		Labels:             (*api.Labels)(c.Labels),

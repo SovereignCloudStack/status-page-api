@@ -27,11 +27,11 @@ func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 
 	data := make([]api.ImpactTypeResponseData, len(impactTypes))
 	for impactTypeIndex, impactType := range impactTypes {
-		data[impactTypeIndex] = *impactType.ToAPIResponse()
+		data[impactTypeIndex] = impactType.ToAPIResponse()
 	}
 
 	return ctx.JSON(http.StatusOK, api.ImpactTypeListResponse{ //nolint:wrapcheck
-		Data: &data,
+		Data: data,
 	})
 }
 

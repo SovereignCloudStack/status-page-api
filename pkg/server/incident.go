@@ -51,11 +51,11 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 
 	data := make([]api.IncidentResponseData, len(incidents))
 	for incidentIndex, incident := range incidents {
-		data[incidentIndex] = *incident.ToAPIResponse()
+		data[incidentIndex] = incident.ToAPIResponse()
 	}
 
 	return ctx.JSON(http.StatusOK, api.IncidentListResponse{ //nolint:wrapcheck
-		Data: &data,
+		Data: data,
 	})
 }
 
@@ -202,11 +202,11 @@ func (i *Implementation) GetIncidentUpdates(ctx echo.Context, incidentID api.Inc
 
 	data := make([]api.IncidentUpdateResponseData, len(incidentUpdates))
 	for incidentUpdateIndex, incidentUpdate := range incidentUpdates {
-		data[incidentUpdateIndex] = *incidentUpdate.ToAPIResponse()
+		data[incidentUpdateIndex] = incidentUpdate.ToAPIResponse()
 	}
 
 	return ctx.JSON(http.StatusOK, api.IncidentUpdateListResponse{ //nolint:wrapcheck
-		Data: &data,
+		Data: data,
 	})
 }
 

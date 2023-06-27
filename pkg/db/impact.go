@@ -15,8 +15,8 @@ type ImpactType struct {
 }
 
 // ToAPIResponse converts to API response.
-func (it *ImpactType) ToAPIResponse() *api.ImpactTypeResponseData {
-	return &api.ImpactTypeResponseData{
+func (it *ImpactType) ToAPIResponse() api.ImpactTypeResponseData {
+	return api.ImpactTypeResponseData{
 		Id:          it.ID.String(),
 		DisplayName: it.DisplayName,
 		Description: it.Description,

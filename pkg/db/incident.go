@@ -23,8 +23,8 @@ type Incident struct {
 }
 
 // ToAPIResponse converts to API response.
-func (i *Incident) ToAPIResponse() *api.IncidentResponseData {
-	return &api.IncidentResponseData{
+func (i *Incident) ToAPIResponse() api.IncidentResponseData {
+	return api.IncidentResponseData{
 		Id:          i.ID.String(),
 		DisplayName: i.DisplayName,
 		Description: i.Description,
@@ -106,8 +106,8 @@ type IncidentUpdate struct {
 }
 
 // ToAPIResponse converts to API response.
-func (iu *IncidentUpdate) ToAPIResponse() *api.IncidentUpdateResponseData {
-	return &api.IncidentUpdateResponseData{
+func (iu *IncidentUpdate) ToAPIResponse() api.IncidentUpdateResponseData {
+	return api.IncidentUpdateResponseData{
 		Order:       *iu.Order,
 		DisplayName: iu.DisplayName,
 		Description: iu.Description,
