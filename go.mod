@@ -3,7 +3,7 @@ module github.com/SovereignCloudStack/status-page-api
 go 1.20
 
 require (
-	github.com/SovereignCloudStack/status-page-openapi/pkg/api v0.0.0-20230613120228-affd5c0b5de7
+	github.com/SovereignCloudStack/status-page-openapi/pkg/api v0.0.0-20230627073138-2ced16247192
 	github.com/google/uuid v1.3.0
 	github.com/labstack/echo/v4 v4.10.2
 	github.com/rs/zerolog v1.29.1
