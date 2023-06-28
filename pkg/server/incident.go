@@ -211,8 +211,11 @@ func (i *Implementation) GetIncidentUpdates(ctx echo.Context, incidentID api.Inc
 }
 
 // CreateIncidentUpdate handles updates to an update for one incident.
-func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.IncidentIdPathParameter) error {
-	var request api.CreateIncidentUpdateJSONRequestBody
+func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.IncidentIdPathParameter) error { //nolint:funlen,lll
+	var (
+		request api.CreateIncidentUpdateJSONRequestBody
+		order   int
+	)
 
 	logger := i.logger.With().Str("handler", "CreateIncidentUpdate").Str("id", incidentID).Logger()
 
@@ -223,27 +226,47 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 		return echo.ErrInternalServerError
 	}
 
-	order, err := DbDef.GetHighestIncidentUpdateOrder(i.dbCon, incidentID)
+	err = i.dbCon.Transaction(func(dbTx *gorm.DB) error {
+		var (
+			incidentUpdate *DbDef.IncidentUpdate
+			transactionErr error
+		)
+
+		order, transactionErr = DbDef.GetHighestIncidentUpdateOrder(dbTx, incidentID)
+		if transactionErr != nil {
+			logger.Error().Err(transactionErr).Msg("error getting current highest order of incident")
+
+			return echo.ErrInternalServerError
+		}
+
+		order++
+
+		logger.Debug().Interface("request", request).Int("order", order).Send()
+
+		incidentUpdate, transactionErr = DbDef.InicdentUpdateFromAPI(&request, incidentID, order)
+		if transactionErr != nil {
+			logger.Error().Err(transactionErr).Msg("error parsing request")
+
+			return echo.ErrInternalServerError
+		}
+
+		res := dbTx.Create(&incidentUpdate)
+		if res.Error != nil {
+			logger.Error().Err(res.Error).Msg("error creating incident update")
+
+			return echo.ErrInternalServerError
+		}
+
+		return nil
+	})
+
 	if err != nil {
-		logger.Error().Err(err).Msg("error getting current highest order of incident")
+		if errors.Is(err, &echo.HTTPError{}) { //nolint:exhaustruct
+			// Echo errors are already defined and logged
+			return err //nolint:wrapcheck
+		}
 
-		return echo.ErrInternalServerError
-	}
-
-	order++
-
-	logger.Debug().Interface("request", request).Int("order", order).Send()
-
-	incidentUpdate, err := DbDef.InicdentUpdateFromAPI(&request, incidentID, order)
-	if err != nil {
-		logger.Error().Err(err).Msg("error parsing request")
-
-		return echo.ErrInternalServerError
-	}
-
-	res := i.dbCon.Create(&incidentUpdate)
-	if res.Error != nil {
-		logger.Error().Err(res.Error).Msg("error creating incident update")
+		logger.Error().Err(err).Msg("error in database transaction")
 
 		return echo.ErrInternalServerError
 	}

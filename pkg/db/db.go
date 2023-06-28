@@ -57,45 +57,53 @@ func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 
 	initialPhaseGeneration := 1
 
-	// check if already provisioned
-	var lastPhase Phase
+	err = dbCon.Transaction(func(dbTx *gorm.DB) error {
+		// check if already provisioned
+		var lastPhase Phase
 
-	res := dbCon.
-		Where("generation = ? AND name = ?", initialPhaseGeneration, resources.Phases[len(resources.Phases)-1].Name).
-		First(&lastPhase)
-
-	err = res.Error
-	if err != nil {
-		if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("error getting last phase: %w", err)
+		res := dbTx.
+			Where(
+				"generation = ? AND name = ?",
+				initialPhaseGeneration, resources.Phases[len(resources.Phases)-1].Name,
+			).
+			First(&lastPhase)
+		if res.Error != nil {
+			if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
+				return fmt.Errorf("error getting last phase: %w", err)
+			}
 		}
-	}
 
-	if lastPhase.Order != nil && *lastPhase.Order == len(resources.Phases)-1 {
-		// db has been provisioned before
+		if lastPhase.Order != nil && *lastPhase.Order == len(resources.Phases)-1 {
+			// db has been provisioned before
+			return nil
+		}
+
+		res = dbTx.Create(&resources.Components)
+		if res.Error != nil {
+			return fmt.Errorf("error saving components: %w", res.Error)
+		}
+
+		res = dbTx.Create(&resources.ImpactTypes)
+		if res.Error != nil {
+			return fmt.Errorf("error saving impact types: %w", res.Error)
+		}
+
+		for phaseIndex := range resources.Phases {
+			order := phaseIndex
+
+			resources.Phases[phaseIndex].Order = &order
+			resources.Phases[phaseIndex].Generation = &initialPhaseGeneration
+		}
+
+		res = dbTx.Create(&resources.Phases)
+		if res.Error != nil {
+			return fmt.Errorf("error saving phases: %w", res.Error)
+		}
+
 		return nil
-	}
-
-	res = dbCon.Create(&resources.Components)
-	if res.Error != nil {
-		return fmt.Errorf("error saving components: %w", res.Error)
-	}
-
-	res = dbCon.Create(&resources.ImpactTypes)
-	if res.Error != nil {
-		return fmt.Errorf("error saving impact types: %w", res.Error)
-	}
-
-	for phaseIndex := range resources.Phases {
-		order := phaseIndex
-
-		resources.Phases[phaseIndex].Order = &order
-		resources.Phases[phaseIndex].Generation = &initialPhaseGeneration
-	}
-
-	res = dbCon.Create(&resources.Phases)
-	if res.Error != nil {
-		return fmt.Errorf("error saving phases: %w", res.Error)
+	})
+	if err != nil {
+		return fmt.Errorf("error in database transaction: %w", err)
 	}
 
 	return nil
