@@ -115,8 +115,8 @@ func (iu *IncidentUpdate) ToAPIResponse() api.IncidentUpdateResponseData {
 	}
 }
 
-// InicdentUpdateFromAPI creates an [IncidentUpdate] from an API request.
-func InicdentUpdateFromAPI(
+// IncidentUpdateFromAPI allready creates an [IncidentUpdate] from an API request.
+func IncidentUpdateFromAPI(
 	incidentUpdateRequest *api.IncidentUpdate,
 	incidentID string,
 	order int,

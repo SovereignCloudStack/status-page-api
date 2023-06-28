@@ -243,7 +243,7 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 
 		logger.Debug().Interface("request", request).Int("order", order).Send()
 
-		incidentUpdate, transactionErr = DbDef.InicdentUpdateFromAPI(&request, incidentID, order)
+		incidentUpdate, transactionErr = DbDef.IncidentUpdateFromAPI(&request, incidentID, order)
 		if transactionErr != nil {
 			logger.Error().Err(transactionErr).Msg("error parsing request")
 
@@ -369,7 +369,7 @@ func (i *Implementation) UpdateIncidentUpdate(
 		Interface("request", request).
 		Send()
 
-	incidentUpdate, err := DbDef.InicdentUpdateFromAPI(&request, incidentID, incidentUpdateOrder)
+	incidentUpdate, err := DbDef.IncidentUpdateFromAPI(&request, incidentID, incidentUpdateOrder)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
 
