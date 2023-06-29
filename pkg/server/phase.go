@@ -133,7 +133,7 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error { //nolint:funl
 			return err //nolint:wrapcheck
 		}
 
-		logger.Error().Err(err).Msg("error in database transaction")
+		logger.Error().Err(err).Msg("error in transaction")
 
 		return echo.ErrInternalServerError
 	}

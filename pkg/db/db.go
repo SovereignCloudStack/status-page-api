@@ -103,7 +103,7 @@ func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 		return nil
 	})
 	if err != nil {
-		return fmt.Errorf("error in database transaction: %w", err)
+		return fmt.Errorf("error in provisioning transaction: %w", err)
 	}
 
 	return nil
