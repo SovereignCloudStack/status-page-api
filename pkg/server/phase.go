@@ -19,7 +19,9 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 
 	logger := i.logger.With().Str("handler", "GetPhaseList").Logger()
 
-	err := i.dbCon.Transaction(func(dbTx *gorm.DB) error {
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	err := dbSession.Transaction(func(dbTx *gorm.DB) error {
 		var transactionErr error
 		generation, transactionErr = DbDef.GetCurrentPhaseGeneration(dbTx)
 		if transactionErr != nil {
@@ -91,7 +93,9 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error { //nolint:funl
 		return echo.ErrInternalServerError
 	}
 
-	err = i.dbCon.Transaction(func(dbTx *gorm.DB) error {
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	err = dbSession.Transaction(func(dbTx *gorm.DB) error {
 		var transactionErr error
 
 		generation, transactionErr = DbDef.GetCurrentPhaseGeneration(dbTx)

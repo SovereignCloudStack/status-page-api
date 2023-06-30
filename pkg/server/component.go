@@ -18,7 +18,9 @@ func (i *Implementation) GetComponents(ctx echo.Context) error {
 	logger := i.logger.With().Str("handler", "GetComponents").Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
 		return db.Joins("Incident").Where("ended_at IS NULL")
 	}).Find(&components)
 
@@ -60,7 +62,9 @@ func (i *Implementation) CreateComponent(ctx echo.Context) error { //nolint:dupl
 		return echo.ErrInternalServerError
 	}
 
-	res := i.dbCon.Create(&component)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Create(&component)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error creating component")
 
@@ -77,7 +81,9 @@ func (i *Implementation) DeleteComponent(ctx echo.Context, componentID api.Compo
 	logger := i.logger.With().Str("handler", "DeleteComponent").Str("id", componentID).Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Where("id = ?", componentID).Delete(&DbDef.Component{}) //nolint: exhaustruct
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Where("id = ?", componentID).Delete(&DbDef.Component{}) //nolint: exhaustruct
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error deleting component")
 
@@ -100,7 +106,9 @@ func (i *Implementation) GetComponent(ctx echo.Context, componentID string) erro
 	logger := i.logger.With().Str("handler", "GetComponent").Str("id", componentID).Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
 		return db.Joins("Incident").Where("ended_at IS NULL")
 	}).Where("id = ?", componentID).First(&component)
 	if res.Error != nil {
@@ -149,7 +157,9 @@ func (i *Implementation) UpdateComponent(ctx echo.Context, componentID api.Compo
 
 	component.ID = &componentUUID
 
-	res := i.dbCon.Updates(component)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Updates(component)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error updating component")
 

@@ -18,7 +18,9 @@ func (i *Implementation) GetImpactTypes(ctx echo.Context) error {
 	logger := i.logger.With().Str("handler", "GetImpactTypes").Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Find(&impactTypes)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Find(&impactTypes)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error loading impact types")
 
@@ -57,7 +59,9 @@ func (i *Implementation) CreateImpactType(ctx echo.Context) error { //nolint:dup
 		return echo.ErrInternalServerError
 	}
 
-	res := i.dbCon.Create(&impactType)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Create(&impactType)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error creating impact type")
 
@@ -74,7 +78,9 @@ func (i *Implementation) DeleteImpactType(ctx echo.Context, impactTypeID api.Imp
 	logger := i.logger.With().Str("handler", "DeleteImpactType").Str("id", impactTypeID).Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Where("id = ?", impactTypeID).Delete(&DbDef.ImpactType{}) //nolint: exhaustruct
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Where("id = ?", impactTypeID).Delete(&DbDef.ImpactType{}) //nolint: exhaustruct
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error deleting impact type")
 
@@ -97,7 +103,9 @@ func (i *Implementation) GetImpactType(ctx echo.Context, impactTypeID api.Impact
 	logger := i.logger.With().Str("handler", "GetImpactType").Str("id", impactTypeID).Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Where("id = ?", impactTypeID).First(&impactType)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Where("id = ?", impactTypeID).First(&impactType)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			logger.Warn().Msg("impact type not found")
@@ -142,7 +150,9 @@ func (i *Implementation) UpdateImpactType(ctx echo.Context, impactTypeID api.Imp
 
 	impactType.ID = &impactTypeUUID
 
-	res := i.dbCon.Updates(&impactType)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Updates(&impactType)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error updating impact type")
 

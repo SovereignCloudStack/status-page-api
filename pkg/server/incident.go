@@ -27,18 +27,20 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 		return echo.ErrBadRequest
 	}
 
-	res := i.dbCon.
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.
 		Preload("Affects.Component").
 		Preload(clause.Associations).
-		Where(i.dbCon.
-			Not(i.dbCon.
+		Where(dbSession.
+			Not(dbSession.
 				Where("began_at < ?", params.Start).
 				Where("ended_at < ?", params.Start))).
-		Where(i.dbCon.
-			Not(i.dbCon.
+		Where(dbSession.
+			Not(dbSession.
 				Where("began_at > ?", params.End).
 				Where("ended_at > ?", params.End))).
-		Or(i.dbCon.
+		Or(dbSession.
 			Where("ended_at IS NULL").
 			Where("began_at <= ?", params.End)).
 		Find(&incidents)
@@ -81,7 +83,9 @@ func (i *Implementation) CreateIncident(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	res := i.dbCon.Create(incident)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Create(incident)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error creating incident")
 
@@ -98,7 +102,9 @@ func (i *Implementation) DeleteIncident(ctx echo.Context, incidentID api.Inciden
 	logger := i.logger.With().Str("handler", "DeleteIncident").Str("id", incidentID).Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Where("id = ?", incidentID).Delete(&DbDef.Incident{}) //nolint: exhaustruct
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Where("id = ?", incidentID).Delete(&DbDef.Incident{}) //nolint: exhaustruct
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error deleting incident")
 
@@ -121,7 +127,9 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 	logger := i.logger.With().Str("handler", "GetIncident").Str("id", incidentID).Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Preload("Affects.Component").Preload(clause.Associations).Where("id = ?", incidentID).First(&incident)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Preload("Affects.Component").Preload(clause.Associations).Where("id = ?", incidentID).First(&incident)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			logger.Warn().Msg("incident not found")
@@ -170,7 +178,9 @@ func (i *Implementation) UpdateIncident(ctx echo.Context, incidentID api.Inciden
 
 	incident.ID = &incidentUUID
 
-	res := i.dbCon.Updates(&incident)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Updates(&incident)
 	if res.Error != nil {
 		logger.Error().Err(err).Msg("error updating incident")
 
@@ -193,7 +203,9 @@ func (i *Implementation) GetIncidentUpdates(ctx echo.Context, incidentID api.Inc
 	logger := i.logger.With().Str("handler", "GetIncidentUpdates").Str("id", incidentID).Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.Where("incident_id = ?", incidentID).Find(&incidentUpdates)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Where("incident_id = ?", incidentID).Find(&incidentUpdates)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error loading incident updates")
 
@@ -226,7 +238,9 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 		return echo.ErrInternalServerError
 	}
 
-	err = i.dbCon.Transaction(func(dbTx *gorm.DB) error {
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	err = dbSession.Transaction(func(dbTx *gorm.DB) error {
 		var (
 			incidentUpdate *DbDef.IncidentUpdate
 			transactionErr error
@@ -289,7 +303,9 @@ func (i *Implementation) DeleteIncidentUpdate(
 		Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.
 		Where("incident_id = ?", incidentID).
 		Where("\"order\" = ?", incidentUpdateOrder).
 		Delete(&DbDef.IncidentUpdate{}) //nolint: exhaustruct
@@ -323,7 +339,9 @@ func (i *Implementation) GetIncidentUpdate(
 		Logger()
 	logger.Debug().Send()
 
-	res := i.dbCon.
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.
 		Where("incident_id = ?", incidentID).
 		Where("\"order\" = ?", incidentUpdateOrder).
 		First(&incidentUpdate)
@@ -376,7 +394,9 @@ func (i *Implementation) UpdateIncidentUpdate(
 		return echo.ErrInternalServerError
 	}
 
-	res := i.dbCon.Updates(&incidentUpdate)
+	dbSession := i.dbCon.WithContext(ctx.Request().Context())
+
+	res := dbSession.Updates(&incidentUpdate)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error updating incident update")
 
