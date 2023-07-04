@@ -1,56 +1,142 @@
 package db
 
 import (
-	"time"
+	"errors"
+	"fmt"
 
+	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // Incident represents an incident happening to one or more [Component].
 type Incident struct {
-	ID             ID               `gorm:"primaryKey" json:"id"`
-	Affects        []Component      `gorm:"many2many:component_incidents" json:"affects"`
-	BeganAt        *time.Time       `json:"beganAt,omitempty"`
-	Description    string           `json:"description"`
-	EndedAt        *time.Time       `json:"endedAt"`
-	ImpactTypeSlug string           `json:"-"`
-	ImpactType     ImpactType       `gorm:"foreignKey:ImpactTypeSlug" json:"impactType"`
-	PhaseSlug      string           `json:"-"`
-	Phase          Phase            `gorm:"foreignKey:PhaseSlug" json:"phase"`
-	Title          string           `json:"title"`
-	Updates        []IncidentUpdate `gorm:"foreignKey:IncidentID" json:"updates"`
+	Model           `gorm:"embedded"`
+	DisplayName     *api.DisplayName
+	Description     *api.Description
+	Affects         *[]Impact `gorm:"foreignKey:IncidentID;constraint:OnDelete:CASCADE"`
+	BeganAt         *api.Date
+	EndedAt         *api.Date
+	PhaseGeneration *api.Incremental
+	PhaseOrder      *api.Incremental
+	Phase           *Phase            `gorm:"foreignKey:PhaseGeneration,PhaseOrder;References:Generation,Order"`
+	Updates         *[]IncidentUpdate `gorm:"foreignKey:IncidentID"`
+}
+
+// ToAPIResponse converts to API response.
+func (i *Incident) ToAPIResponse() api.IncidentResponseData {
+	return api.IncidentResponseData{
+		Id:          i.ID.String(),
+		DisplayName: i.DisplayName,
+		Description: i.Description,
+		BeganAt:     i.BeganAt,
+		EndedAt:     i.EndedAt,
+		Phase: &api.PhaseReference{
+			Generation: *i.Phase.Generation,
+			Order:      *i.Phase.Order,
+		},
+		Affects: i.GetImpactComponentList(),
+		Updates: i.GetIncidentUpdates(),
+	}
+}
+
+// GetImpactComponentList converts the Affects list to an [api.ImpactComponentList].
+func (i *Incident) GetImpactComponentList() *api.ImpactComponentList {
+	impacts := make(api.ImpactComponentList, len(*i.Affects))
+
+	for impactIndex, impact := range *i.Affects {
+		componentID := impact.ComponentID.String()
+		typeID := impact.ImpactTypeID.String()
+		impacts[impactIndex].Reference = &componentID
+		impacts[impactIndex].Type = &typeID
+	}
+
+	return &impacts
+}
+
+// GetIncidentUpdates converts the Updates list to an [api.IncrementalList].
+func (i *Incident) GetIncidentUpdates() *api.IncrementalList {
+	updates := make(api.IncrementalList, len(*i.Updates))
+
+	for updateIndex, update := range *i.Updates {
+		updates[updateIndex] = *update.Order
+	}
+
+	return &updates
+}
+
+// IncidentFromAPI creates an [Incident] from an API request.
+func IncidentFromAPI(incidentRequest *api.Incident) (*Incident, error) {
+	if incidentRequest == nil {
+		return nil, ErrEmptyValue
+	}
+
+	affects, err := AffectsFromImpactComponentList(incidentRequest.Affects)
+	if err != nil {
+		if !errors.Is(err, ErrEmptyValue) {
+			return nil, fmt.Errorf("error parsing affects: %w", err)
+		}
+	}
+
+	phase, err := phaseReferenceFromAPI(incidentRequest.Phase)
+	if err != nil {
+		if !errors.Is(err, ErrEmptyValue) {
+			return nil, fmt.Errorf("error parsing phase: %w", err)
+		}
+	}
+
+	incident := Incident{ //nolint:exhaustruct
+		DisplayName: incidentRequest.DisplayName,
+		Description: incidentRequest.Description,
+		BeganAt:     incidentRequest.BeganAt,
+		EndedAt:     incidentRequest.EndedAt,
+		Phase:       phase,
+		Affects:     affects,
+	}
+
+	return &incident, nil
 }
 
 // IncidentUpdate describes a action that changes the incident.
 type IncidentUpdate struct {
-	ID         ID        `gorm:"primaryKey"`
-	CreatedAt  time.Time `json:"createdAt"`
-	Text       string    `json:"text"`
-	IncidentID ID        `json:"-"`
+	IncidentID  *ID              `gorm:"primaryKey"`
+	Order       *api.Incremental `gorm:"primaryKey"`
+	DisplayName *api.DisplayName
+	Description *api.Description
+	CreatedAt   *api.Date
 }
 
-// BeforeCreate implements the behavior before a database insertion. This adds an UUID as ID.
-func (i *Incident) BeforeCreate(_ *gorm.DB) error {
-	i.ID = ID(uuid.NewString())
-
-	return nil
+// ToAPIResponse converts to API response.
+func (iu *IncidentUpdate) ToAPIResponse() api.IncidentUpdateResponseData {
+	return api.IncidentUpdateResponseData{
+		Order:       *iu.Order,
+		DisplayName: iu.DisplayName,
+		Description: iu.Description,
+		CreatedAt:   iu.CreatedAt,
+	}
 }
 
-// BeforeCreate implements the behavior before a database insertion. This adds an UUID as ID.
-func (iu *IncidentUpdate) BeforeCreate(_ *gorm.DB) error {
-	iu.ID = ID(uuid.NewString())
-
-	return nil
-}
-
-// GetAffectsIds is a helper function to convert the affected components to a list of [Component.ID]s.
-func (i *Incident) GetAffectsIds() []string {
-	componentIds := make([]string, len(i.Affects))
-
-	for componentIndex, component := range i.Affects {
-		componentIds[componentIndex] = string(component.ID)
+// IncidentUpdateFromAPI creates an [IncidentUpdate] from an API request.
+func IncidentUpdateFromAPI(
+	incidentUpdateRequest *api.IncidentUpdate,
+	incidentID string,
+	order int,
+) (*IncidentUpdate, error) {
+	if incidentUpdateRequest == nil {
+		return nil, ErrEmptyValue
 	}
 
-	return componentIds
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing incident id: %w", err)
+	}
+
+	incidentUpdate := IncidentUpdate{
+		IncidentID:  &incidentUUID,
+		Order:       &order,
+		DisplayName: incidentUpdateRequest.DisplayName,
+		Description: incidentUpdateRequest.Description,
+		CreatedAt:   incidentUpdateRequest.CreatedAt,
+	}
+
+	return &incidentUpdate, nil
 }

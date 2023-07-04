@@ -1,7 +1,21 @@
 package db
 
-// Phase represents a state of an incident on a movin scale to resolution of the incident.
+import "github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+
+// Phase represents a state of an incident on a moving scale to resolution of the incident.
 type Phase struct {
-	Slug  string `gorm:"primaryKey" json:"slug"`
-	Order uint   `gorm:"unique"`
+	Name       *api.Phase       `yaml:"name"`
+	Generation *api.Incremental `gorm:"primaryKey"`
+	Order      *api.Incremental `gorm:"primaryKey"`
+}
+
+func phaseReferenceFromAPI(phase *api.PhaseReference) (*Phase, error) {
+	if phase == nil {
+		return nil, ErrEmptyValue
+	}
+
+	return &Phase{ //nolint:exhaustruct
+		Generation: &phase.Generation,
+		Order:      &phase.Order,
+	}, nil
 }

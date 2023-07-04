@@ -1,10 +1,21 @@
 package db
 
-// Label represents a label with a name and value. Components can have none or many label.
-type Label struct {
-	Name  string `gorm:"primaryKey" json:"name"`
-	Value string `gorm:"primaryKey" json:"value"`
-}
+import (
+	"encoding/json"
+	"fmt"
 
-// Labels is a list of [Label].
-type Labels []Label
+	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+)
+
+// Labels are metadata for components.
+type Labels api.Labels
+
+// Scan implements the [database/sql.Scanner] interface to correctly read data.
+func (l *Labels) Scan(value interface{}) error {
+	data, ok := value.([]byte)
+	if !ok {
+		return fmt.Errorf("%w: %v", ErrInvalidLabelData, value)
+	}
+
+	return json.Unmarshal(data, l) //nolint:wrapcheck
+}

@@ -1,8 +1,8 @@
 # Setting types how an incident can impact components
 impactTypes:
-- slug: performance_degration
-- slug: connectivity_problems
-- slug: unknown
+- displayname: Performance Degration
+- displayname: Connectivity Problems
+- displayname: Unknown
 
 # Setting components.
 # Field "slug" must be unique, labels can be used to query for multiple components
@@ -35,7 +35,8 @@ components:
     az: '2'
 
 phases:
-- slug: scheduled
-- slug: investigation_ongoing
-- slug: working_on_it
-- slug: potential_fix_deployed
+- name: Scheduled
+- name: Investigation ongoing
+- name: Working on it
+- name: Potential fix deployed
+- name: Done
