@@ -1,0 +1,11 @@
+---
+- job:
+    name: golang-lint
+    parent: golangci-lint
+
+- job:
+    name: golang-test
+    parent: golang-go
+    vars:
+      go_command: test ./...
+      go_version: 1.20.5
