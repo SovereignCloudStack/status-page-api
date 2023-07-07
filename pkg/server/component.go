@@ -53,13 +53,19 @@ func (i *Implementation) CreateComponent(ctx echo.Context) error { //nolint:dupl
 		return echo.ErrInternalServerError
 	}
 
+	if request == (api.CreateComponentJSONRequestBody{}) { //nolint: exhaustruct
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
+	}
+
 	logger.Debug().Interface("request", request).Send()
 
 	component, err := DbDef.ComponentFromAPI(&request)
 	if err != nil {
-		logger.Error().Err(err).Msg("error parsing request")
+		logger.Warn().Err(err).Msg("error parsing request")
 
-		return echo.ErrInternalServerError
+		return echo.ErrBadRequest
 	}
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
@@ -77,13 +83,23 @@ func (i *Implementation) CreateComponent(ctx echo.Context) error { //nolint:dupl
 }
 
 // DeleteComponent handles deletion of components.
-func (i *Implementation) DeleteComponent(ctx echo.Context, componentID api.ComponentIdPathParameter) error {
+func (i *Implementation) DeleteComponent( //nolint:dupl
+	ctx echo.Context,
+	componentID api.ComponentIdPathParameter,
+) error {
 	logger := i.logger.With().Str("handler", "DeleteComponent").Str("id", componentID).Logger()
 	logger.Debug().Send()
 
+	componentUUID, err := uuid.Parse(componentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing component uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Where("id = ?", componentID).Delete(&DbDef.Component{}) //nolint: exhaustruct
+	res := dbSession.Where("id = ?", componentUUID).Delete(&DbDef.Component{}) //nolint: exhaustruct
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error deleting component")
 
@@ -106,11 +122,18 @@ func (i *Implementation) GetComponent(ctx echo.Context, componentID string) erro
 	logger := i.logger.With().Str("handler", "GetComponent").Str("id", componentID).Logger()
 	logger.Debug().Send()
 
+	componentUUID, err := uuid.Parse(componentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing component uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
 	res := dbSession.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
 		return db.Joins("Incident").Where("ended_at IS NULL")
-	}).Where("id = ?", componentID).First(&component)
+	}).Where("id = ?", componentUUID).First(&component)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			logger.Warn().Msg("component not found")
@@ -141,18 +164,26 @@ func (i *Implementation) UpdateComponent(ctx echo.Context, componentID api.Compo
 		return echo.ErrInternalServerError
 	}
 
+	if request == (api.UpdateComponentJSONRequestBody{}) { //nolint:exhaustruct
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
+	}
+
 	logger.Debug().Interface("request", request).Send()
 
 	component, err := DbDef.ComponentFromAPI(&request)
 	if err != nil {
-		logger.Error().Err(err).Msg("error parsing request")
+		logger.Warn().Err(err).Msg("error parsing request")
 
-		return echo.ErrInternalServerError
+		return echo.ErrBadRequest
 	}
 
 	componentUUID, err := uuid.Parse(componentID)
 	if err != nil {
-		logger.Error().Err(err).Msg("error parsing id")
+		logger.Warn().Err(err).Msg("error parsing id")
+
+		return echo.ErrBadRequest
 	}
 
 	component.ID = &componentUUID
