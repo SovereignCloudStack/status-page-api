@@ -50,13 +50,19 @@ func (i *Implementation) CreateImpactType(ctx echo.Context) error { //nolint:dup
 		return echo.ErrInternalServerError
 	}
 
+	if request == (api.CreateImpactTypeJSONRequestBody{}) { //nolint: exhaustruct
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
+	}
+
 	logger.Debug().Interface("request", request).Send()
 
 	impactType, err := DbDef.ImpactTypeFromAPI(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
 
-		return echo.ErrInternalServerError
+		return echo.ErrBadRequest
 	}
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
@@ -68,19 +74,29 @@ func (i *Implementation) CreateImpactType(ctx echo.Context) error { //nolint:dup
 		return echo.ErrInternalServerError
 	}
 
-	return ctx.JSON(http.StatusOK, api.IdResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusCreated, api.IdResponse{ //nolint:wrapcheck
 		Id: impactType.ID.String(),
 	})
 }
 
 // DeleteImpactType handles deletion of impact types.
-func (i *Implementation) DeleteImpactType(ctx echo.Context, impactTypeID api.ImpactTypeIdPathParameter) error {
+func (i *Implementation) DeleteImpactType( //nolint:dupl
+	ctx echo.Context,
+	impactTypeID api.ImpactTypeIdPathParameter,
+) error {
 	logger := i.logger.With().Str("handler", "DeleteImpactType").Str("id", impactTypeID).Logger()
 	logger.Debug().Send()
 
+	impactTypeUUID, err := uuid.Parse(impactTypeID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing impact type uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Where("id = ?", impactTypeID).Delete(&DbDef.ImpactType{}) //nolint: exhaustruct
+	res := dbSession.Where("id = ?", impactTypeUUID).Delete(&DbDef.ImpactType{}) //nolint: exhaustruct
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error deleting impact type")
 
@@ -103,9 +119,16 @@ func (i *Implementation) GetImpactType(ctx echo.Context, impactTypeID api.Impact
 	logger := i.logger.With().Str("handler", "GetImpactType").Str("id", impactTypeID).Logger()
 	logger.Debug().Send()
 
+	impactTypeUUID, err := uuid.Parse(impactTypeID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing impact type uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Where("id = ?", impactTypeID).First(&impactType)
+	res := dbSession.Where("id = ?", impactTypeUUID).First(&impactType)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			logger.Warn().Msg("impact type not found")
@@ -136,16 +159,26 @@ func (i *Implementation) UpdateImpactType(ctx echo.Context, impactTypeID api.Imp
 		return echo.ErrInternalServerError
 	}
 
+	if request == (api.CreateImpactTypeJSONRequestBody{}) { //nolint: exhaustruct
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
+	}
+
 	logger.Debug().Interface("request", request).Send()
 
 	impactType, err := DbDef.ImpactTypeFromAPI(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
+
+		return echo.ErrBadRequest
 	}
 
 	impactTypeUUID, err := uuid.Parse(impactTypeID)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing id")
+
+		return echo.ErrBadRequest
 	}
 
 	impactType.ID = &impactTypeUUID
