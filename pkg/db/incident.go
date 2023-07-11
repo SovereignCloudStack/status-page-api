@@ -31,8 +31,8 @@ func (i *Incident) ToAPIResponse() api.IncidentResponseData {
 		BeganAt:     i.BeganAt,
 		EndedAt:     i.EndedAt,
 		Phase: &api.PhaseReference{
-			Generation: *i.Phase.Generation,
-			Order:      *i.Phase.Order,
+			Generation: *i.PhaseGeneration,
+			Order:      *i.PhaseOrder,
 		},
 		Affects: i.GetImpactComponentList(),
 		Updates: i.GetIncidentUpdates(),

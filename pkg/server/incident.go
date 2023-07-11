@@ -20,10 +20,14 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 	logger.Debug().Time("start", params.Start).Time("end", params.End).Send()
 
 	if params.Start.IsZero() || params.End.IsZero() {
+		logger.Warn().Msg("missing time parameter")
+
 		return echo.ErrBadRequest
 	}
 
 	if params.End.Before(params.Start) {
+		logger.Warn().Msg("end paramater before start parameter")
+
 		return echo.ErrBadRequest
 	}
 
@@ -74,13 +78,19 @@ func (i *Implementation) CreateIncident(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
+	if request == (api.CreateIncidentJSONRequestBody{}) { //nolint: exhaustruct
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
+	}
+
 	logger.Debug().Interface("request", request).Send()
 
 	incident, err := DbDef.IncidentFromAPI(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
 
-		return echo.ErrInternalServerError
+		return echo.ErrBadRequest
 	}
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
@@ -98,13 +108,23 @@ func (i *Implementation) CreateIncident(ctx echo.Context) error {
 }
 
 // DeleteIncident handles deletion of incidents.
-func (i *Implementation) DeleteIncident(ctx echo.Context, incidentID api.IncidentIdPathParameter) error {
+func (i *Implementation) DeleteIncident( //nolint:dupl
+	ctx echo.Context,
+	incidentID api.IncidentIdPathParameter,
+) error {
 	logger := i.logger.With().Str("handler", "DeleteIncident").Str("id", incidentID).Logger()
 	logger.Debug().Send()
 
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing component uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Where("id = ?", incidentID).Delete(&DbDef.Incident{}) //nolint: exhaustruct
+	res := dbSession.Where("id = ?", incidentUUID).Delete(&DbDef.Incident{}) //nolint: exhaustruct
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error deleting incident")
 
@@ -127,9 +147,20 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 	logger := i.logger.With().Str("handler", "GetIncident").Str("id", incidentID).Logger()
 	logger.Debug().Send()
 
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing component uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Preload("Affects.Component").Preload(clause.Associations).Where("id = ?", incidentID).First(&incident)
+	res := dbSession.
+		Preload("Affects.Component").
+		Preload(clause.Associations).
+		Where("id = ?", incidentUUID).
+		First(&incident)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			logger.Warn().Msg("incident not found")
@@ -160,20 +191,26 @@ func (i *Implementation) UpdateIncident(ctx echo.Context, incidentID api.Inciden
 		return echo.ErrInternalServerError
 	}
 
+	if request == (api.UpdateIncidentJSONRequestBody{}) { //nolint:exhaustruct
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
+	}
+
 	logger.Debug().Interface("request", request).Send()
 
 	incident, err := DbDef.IncidentFromAPI(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
 
-		return echo.ErrInternalServerError
+		return echo.ErrBadRequest
 	}
 
 	incidentUUID, err := uuid.Parse(incidentID)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing id")
 
-		return echo.ErrInternalServerError
+		return echo.ErrBadRequest
 	}
 
 	incident.ID = &incidentUUID
