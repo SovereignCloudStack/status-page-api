@@ -118,20 +118,15 @@ func (iu *IncidentUpdate) ToAPIResponse() api.IncidentUpdateResponseData {
 // IncidentUpdateFromAPI creates an [IncidentUpdate] from an API request.
 func IncidentUpdateFromAPI(
 	incidentUpdateRequest *api.IncidentUpdate,
-	incidentID string,
+	incidentID uuid.UUID,
 	order int,
 ) (*IncidentUpdate, error) {
 	if incidentUpdateRequest == nil {
 		return nil, ErrEmptyValue
 	}
 
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		return nil, fmt.Errorf("error parsing incident id: %w", err)
-	}
-
 	incidentUpdate := IncidentUpdate{
-		IncidentID:  &incidentUUID,
+		IncidentID:  &incidentID,
 		Order:       &order,
 		DisplayName: incidentUpdateRequest.DisplayName,
 		Description: incidentUpdateRequest.Description,

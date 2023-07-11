@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
@@ -117,7 +118,7 @@ func (i *Implementation) DeleteIncident( //nolint:dupl
 
 	incidentUUID, err := uuid.Parse(incidentID)
 	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing component uuid")
+		logger.Warn().Err(err).Msg("error parsing incident uuid")
 
 		return echo.ErrBadRequest
 	}
@@ -149,7 +150,7 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 
 	incidentUUID, err := uuid.Parse(incidentID)
 	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing component uuid")
+		logger.Warn().Err(err).Msg("error parsing incident uuid")
 
 		return echo.ErrBadRequest
 	}
@@ -240,9 +241,16 @@ func (i *Implementation) GetIncidentUpdates(ctx echo.Context, incidentID api.Inc
 	logger := i.logger.With().Str("handler", "GetIncidentUpdates").Str("id", incidentID).Logger()
 	logger.Debug().Send()
 
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing incident uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Where("incident_id = ?", incidentID).Find(&incidentUpdates)
+	res := dbSession.Where("incident_id = ?", incidentUUID).Find(&incidentUpdates)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error loading incident updates")
 
@@ -268,11 +276,24 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 
 	logger := i.logger.With().Str("handler", "CreateIncidentUpdate").Str("id", incidentID).Logger()
 
-	err := ctx.Bind(&request)
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing incident uuid")
+
+		return echo.ErrBadRequest
+	}
+
+	err = ctx.Bind(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error binding request")
 
 		return echo.ErrInternalServerError
+	}
+
+	if request == (api.CreateIncidentUpdateJSONRequestBody{}) { //nolint: exhaustruct
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
 	}
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
@@ -283,40 +304,29 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 			transactionErr error
 		)
 
-		order, transactionErr = DbDef.GetHighestIncidentUpdateOrder(dbTx, incidentID)
+		order, transactionErr = DbDef.GetHighestIncidentUpdateOrder(dbTx, incidentUUID)
 		if transactionErr != nil {
-			logger.Error().Err(transactionErr).Msg("error getting current highest order of incident")
-
-			return echo.ErrInternalServerError
+			return fmt.Errorf("error getting current highest order of incident: %w", transactionErr)
 		}
 
 		order++
 
 		logger.Debug().Interface("request", request).Int("order", order).Send()
 
-		incidentUpdate, transactionErr = DbDef.IncidentUpdateFromAPI(&request, incidentID, order)
+		incidentUpdate, transactionErr = DbDef.IncidentUpdateFromAPI(&request, incidentUUID, order)
 		if transactionErr != nil {
-			logger.Error().Err(transactionErr).Msg("error parsing request")
-
-			return echo.ErrInternalServerError
+			return fmt.Errorf("error parsing request: %w", transactionErr)
 		}
 
 		res := dbTx.Create(&incidentUpdate)
 		if res.Error != nil {
-			logger.Error().Err(res.Error).Msg("error creating incident update")
-
-			return echo.ErrInternalServerError
+			return fmt.Errorf("error creating incident update: %w", res.Error)
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		if errors.Is(err, &echo.HTTPError{}) { //nolint:exhaustruct
-			// Echo errors are already defined and logged
-			return err //nolint:wrapcheck
-		}
-
 		logger.Error().Err(err).Msg("error in transaction")
 
 		return echo.ErrInternalServerError
@@ -340,10 +350,17 @@ func (i *Implementation) DeleteIncidentUpdate(
 		Logger()
 	logger.Debug().Send()
 
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing incident uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
 	res := dbSession.
-		Where("incident_id = ?", incidentID).
+		Where("incident_id = ?", incidentUUID).
 		Where("\"order\" = ?", incidentUpdateOrder).
 		Delete(&DbDef.IncidentUpdate{}) //nolint: exhaustruct
 	if res.Error != nil {
@@ -376,10 +393,17 @@ func (i *Implementation) GetIncidentUpdate(
 		Logger()
 	logger.Debug().Send()
 
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing incident uuid")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
 	res := dbSession.
-		Where("incident_id = ?", incidentID).
+		Where("incident_id = ?", incidentUUID).
 		Where("\"order\" = ?", incidentUpdateOrder).
 		First(&incidentUpdate)
 	if res.Error != nil {
@@ -413,18 +437,31 @@ func (i *Implementation) UpdateIncidentUpdate(
 		Int("order", incidentUpdateOrder).
 		Logger()
 
-	err := ctx.Bind(&request)
+	incidentUUID, err := uuid.Parse(incidentID)
+	if err != nil {
+		logger.Warn().Err(err).Msg("error parsing incident uuid")
+
+		return echo.ErrBadRequest
+	}
+
+	err = ctx.Bind(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error binding request")
 
 		return echo.ErrInternalServerError
 	}
 
+	if request == (api.CreateIncidentUpdateJSONRequestBody{}) { //nolint: exhaustruct
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
+	}
+
 	logger.Debug().
 		Interface("request", request).
 		Send()
 
-	incidentUpdate, err := DbDef.IncidentUpdateFromAPI(&request, incidentID, incidentUpdateOrder)
+	incidentUpdate, err := DbDef.IncidentUpdateFromAPI(&request, incidentUUID, incidentUpdateOrder)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
 
