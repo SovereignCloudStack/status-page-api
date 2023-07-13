@@ -9,7 +9,8 @@ type Phase struct {
 	Order      *api.Incremental `gorm:"primaryKey"`
 }
 
-func phaseReferenceFromAPI(phase *api.PhaseReference) (*Phase, error) {
+// PhaseReferenceFromAPI creates a [Phase] from an API request.
+func PhaseReferenceFromAPI(phase *api.PhaseReference) (*Phase, error) {
 	if phase == nil {
 		return nil, ErrEmptyValue
 	}

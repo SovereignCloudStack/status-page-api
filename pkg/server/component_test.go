@@ -245,27 +245,6 @@ var _ = Describe("Component", Ordered, func() {
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
 			})
 		})
-
-		Context("with invalid request", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, "/components", api.Component{
-					DisplayName: test.Ptr("Storage"),
-					ActivelyAffectedBy: &api.ImpactIncidentList{
-						{
-							Reference: test.Ptr("ABC"), // invalid UUID
-						},
-					},
-				})
-
-				// Act
-				err := handlers.CreateComponent(ctx)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
 	})
 
 	Describe("DeleteComponent", func() {
@@ -557,32 +536,6 @@ var _ = Describe("Component", Ordered, func() {
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrNotFound))
-			})
-		})
-
-		Context("with invalid request", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodPatch,
-					fmt.Sprintf("/components/%s", componentID),
-					api.Component{
-						DisplayName: test.Ptr("Storage"),
-						ActivelyAffectedBy: &api.ImpactIncidentList{
-							{
-								Reference: test.Ptr("ABC"), // invalid UUID
-							},
-						},
-					},
-				)
-
-				// Act
-				err := handlers.UpdateComponent(ctx, componentID)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 	})

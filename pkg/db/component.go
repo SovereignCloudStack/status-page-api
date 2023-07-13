@@ -1,9 +1,6 @@
 package db
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 )
 
@@ -45,17 +42,9 @@ func ComponentFromAPI(componentRequest *api.Component) (*Component, error) {
 		return nil, ErrEmptyValue
 	}
 
-	activelyAffectedBy, err := ActivelyAffectedByFromImpactIncidentList(componentRequest.ActivelyAffectedBy)
-	if err != nil {
-		if !errors.Is(err, ErrEmptyValue) {
-			return nil, fmt.Errorf("error parsing actively affected by: %w", err)
-		}
-	}
-
 	component := Component{ //nolint:exhaustruct
-		DisplayName:        componentRequest.DisplayName,
-		Labels:             (*Labels)(componentRequest.Labels),
-		ActivelyAffectedBy: activelyAffectedBy,
+		DisplayName: componentRequest.DisplayName,
+		Labels:      (*Labels)(componentRequest.Labels),
 	}
 
 	return &component, nil

@@ -77,7 +77,7 @@ func IncidentFromAPI(incidentRequest *api.Incident) (*Incident, error) {
 		}
 	}
 
-	phase, err := phaseReferenceFromAPI(incidentRequest.Phase)
+	phase, err := PhaseReferenceFromAPI(incidentRequest.Phase)
 	if err != nil {
 		if !errors.Is(err, ErrEmptyValue) {
 			return nil, fmt.Errorf("error parsing phase: %w", err)
