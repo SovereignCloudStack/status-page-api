@@ -16,11 +16,3 @@
         jobs:
           - golang-lint
           - golang-test
-    check-post:
-        jobs:
-          - golang-lint
-          - golang-test
-    gate:
-        jobs:
-          - golang-lint
-          - golang-test
