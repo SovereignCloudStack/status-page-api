@@ -9,7 +9,9 @@
     vars:
       go_command: test ./...
       go_version: 1.20.5
+
 - project:
+    name: SovereignCloudStack/status-page-api
     merge-mode: squash-merge
     default-branch: main
     check:
