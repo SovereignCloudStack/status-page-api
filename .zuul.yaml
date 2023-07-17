@@ -15,6 +15,6 @@
     merge-mode: squash-merge
     default-branch: main
     check:
-        jobs:
-          - golang-lint
-          - golang-test
+      jobs:
+        - golang-lint
+        - golang-test
