@@ -6,6 +6,9 @@
       nodes:
         - name: ubuntu-jammy
           label: ubuntu-jammy
+    vars:
+      golangci_lint_version: 1.53.3
+      go_version: 1.20.5
 
 - job:
     name: golang-test
