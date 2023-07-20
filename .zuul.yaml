@@ -2,10 +2,30 @@
 - job:
     name: golang-lint
     parent: golangci-lint
+    nodeset:
+      nodes:
+        - name: ubuntu-jammy
+          label: ubuntu-jammy
+    vars:
+      golangci_lint_version: 1.53.3
+      go_version: 1.20.5
 
 - job:
     name: golang-test
     parent: golang-go
+    nodeset:
+      nodes:
+        - name: ubuntu-jammy
+          label: ubuntu-jammy
     vars:
       go_command: test ./...
       go_version: 1.20.5
+
+- project:
+    name: SovereignCloudStack/status-page-api
+    merge-mode: squash-merge
+    default-branch: main
+    check:
+      jobs:
+        - golang-lint
+        - golang-test
