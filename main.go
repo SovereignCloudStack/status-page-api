@@ -2,9 +2,9 @@ package main
 
 import (
 	"os"
-	"strings"
 	"time"
 
+	"github.com/SovereignCloudStack/status-page-api/internal/app/config"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/logger"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/swagger"
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
@@ -14,7 +14,6 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/pflag"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -33,36 +32,13 @@ func main() { //nolint:funlen
 	handlerLogger := log.With().Str("component", "handler").Logger()
 
 	// Reading config
-	dbDsn := pflag.String(
-		"postgres-dsn",
-		"host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable",
-		"DB dsn",
-	)
-	provisioningFile := pflag.String(
-		"provisioning-file",
-		"./provisioning.yaml",
-		"YAML file containing components etc. to be provisioned on startup",
-	)
-	addr := pflag.String(
-		"addr",
-		":3000",
-		"Address to listen on",
-	)
-	corsOrigins := pflag.String(
-		"cors-origins",
-		"127.0.0.1,localhost",
-		"Allowed CORS origins, separated by ','",
-	)
-	verbose := pflag.CountP(
-		"verbose",
-		"v",
-		"Increase log level",
-	)
-
-	pflag.Parse()
+	conf, err := config.New()
+	if err != nil {
+		log.Fatal().Err(err).Msg("error loading config")
+	}
 
 	// leveled logging
-	switch *verbose {
+	switch conf.Verbose {
 	case 1:
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	case 2: //nolint:gomnd
@@ -80,14 +56,14 @@ func main() { //nolint:funlen
 	echoServer.Use(middleware.Recover())
 	echoServer.Use(middleware.RemoveTrailingSlash())
 	echoServer.Use(middleware.CORSWithConfig(middleware.CORSConfig{ //nolint:exhaustruct
-		AllowOrigins: strings.Split(*corsOrigins, ","),
+		AllowOrigins: conf.Server.CorsOrigins,
 	}))
 
 	echoServer.GET("/openapi.json", swagger.ServeOpenAPISpec)
 	echoServer.GET("/swagger", swagger.ServeSwagger)
 
 	// DB setup
-	dbCon, err := gorm.Open(postgres.Open(*dbDsn), &gorm.Config{ //nolint:exhaustruct
+	dbCon, err := gorm.Open(postgres.Open(conf.Database.GetDSN()), &gorm.Config{ //nolint:exhaustruct
 		Logger: logger.NewGormLogger(&gormLogger),
 	})
 	if err != nil {
@@ -107,7 +83,7 @@ func main() { //nolint:funlen
 	}
 
 	// Initialize "static" DB contents
-	err = DbDef.Provision(*provisioningFile, dbCon)
+	err = DbDef.Provision(conf.ProvisioningFile, dbCon)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error provisioning data")
 	}
@@ -116,6 +92,6 @@ func main() { //nolint:funlen
 	api.RegisterHandlers(echoServer, server.New(dbCon, &handlerLogger))
 
 	// Starting server
-	log.Log().Str("address", *addr).Msg("server start listening")
-	log.Fatal().Err(echoServer.Start(*addr)).Msg("error running server")
+	log.Log().Str("address", conf.Server.ListenAddress).Msg("server start listening")
+	log.Fatal().Err(echoServer.Start(conf.Server.ListenAddress)).Msg("error running server")
 }
