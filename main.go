@@ -63,7 +63,7 @@ func main() { //nolint:funlen
 	echoServer.GET("/swagger", swagger.ServeSwagger)
 
 	// DB setup
-	dbCon, err := gorm.Open(postgres.Open(conf.Database.GetDSN()), &gorm.Config{ //nolint:exhaustruct
+	dbCon, err := gorm.Open(postgres.Open(conf.Database.ConnectionString), &gorm.Config{ //nolint:exhaustruct
 		Logger: logger.NewGormLogger(&gormLogger),
 	})
 	if err != nil {

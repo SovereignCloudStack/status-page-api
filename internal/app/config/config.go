@@ -10,12 +10,7 @@ import (
 
 // Database holds configuration regarding the database connection.
 type Database struct {
-	Host     string
-	User     string
-	Name     string
-	Password string
-	SSLMode  string
-	Port     int
+	ConnectionString string
 }
 
 // Server holds configuration regarding the server.
@@ -27,8 +22,8 @@ type Server struct {
 // Config holds all application configuration.
 type Config struct {
 	ProvisioningFile string
-	Server           Server
 	Database         Database
+	Server           Server
 	Verbose          int
 }
 
@@ -37,18 +32,8 @@ const (
 
 	verbose = "verbose"
 
-	databaseHost            = "database-host"
-	databaseHostDefault     = "127.0.0.1"
-	databaseUser            = "database-user"
-	databaseUserDefault     = "postgres"
-	databaseName            = "database-name"
-	databaseNameDefault     = "postgres"
-	databasePort            = "database-port"
-	databasePortDefault     = 5432
-	databasePassword        = "database-password"
-	databasePasswordDefault = "debug"
-	databaseSSLMode         = "database-ssl-mode"
-	databaseSSLModeDefault  = "disable"
+	databaseConnectionString        = "database-connection-string"
+	databaseConnectionStringDefault = "host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable" //nolint:lll
 
 	serverListenAddress        = "server-listen-address"
 	serverListenAddressDefault = ":3000"
@@ -63,12 +48,7 @@ var serverCorsOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:goche
 func setDefaults() {
 	viper.SetDefault(verbose, 0)
 
-	viper.SetDefault(databaseHost, databaseHostDefault)
-	viper.SetDefault(databaseUser, databaseUserDefault)
-	viper.SetDefault(databaseName, databaseNameDefault)
-	viper.SetDefault(databasePort, databasePortDefault)
-	viper.SetDefault(databasePassword, databasePasswordDefault)
-	viper.SetDefault(databaseSSLMode, databaseSSLModeDefault)
+	viper.SetDefault(databaseConnectionString, databaseConnectionStringDefault)
 
 	viper.SetDefault(serverListenAddress, serverListenAddressDefault)
 	viper.SetDefault(serverCorsOrigins, serverCorsOriginsDefault)
@@ -79,12 +59,7 @@ func setDefaults() {
 func setFlags() {
 	pflag.CountP(verbose, "v", "Increase log level")
 
-	pflag.String(databaseHost, databaseHostDefault, "Database host")
-	pflag.String(databaseUser, databaseUserDefault, "Database user")
-	pflag.String(databaseName, databaseNameDefault, "Database name")
-	pflag.Int(databasePort, databasePortDefault, "Database port")
-	pflag.String(databasePassword, databasePasswordDefault, "Database password")
-	pflag.String(databaseSSLMode, databaseSSLModeDefault, "Database SSL mode")
+	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string")
 
 	pflag.String(serverListenAddress, serverListenAddressDefault, "Server listen address")
 	pflag.StringArray(serverCorsOrigins, serverCorsOriginsDefault, "Server CORS origins to accept")
@@ -95,12 +70,7 @@ func setFlags() {
 func buildConfig() *Config {
 	return &Config{
 		Database: Database{
-			Host:     viper.GetString(databaseHost),
-			User:     viper.GetString(databaseUser),
-			Name:     viper.GetString(databaseName),
-			Port:     viper.GetInt(databasePort),
-			Password: viper.GetString(databasePassword),
-			SSLMode:  viper.GetString(databaseSSLMode),
+			ConnectionString: viper.GetString(databaseConnectionString),
 		},
 		Server: Server{
 			ListenAddress: viper.GetString(serverListenAddress),
@@ -132,17 +102,4 @@ func New() (*Config, error) {
 
 	// new config
 	return buildConfig(), nil
-}
-
-// GetDSN returns the connection string to the database.
-func (db *Database) GetDSN() string {
-	return fmt.Sprintf(
-		"host=%s user=%s dbname=%s port=%d password=%s sslmode=%s",
-		db.Host,
-		db.User,
-		db.Name,
-		db.Port,
-		db.Password,
-		db.SSLMode,
-	)
 }
