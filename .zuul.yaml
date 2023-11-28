@@ -22,6 +22,17 @@
       go_command: test ./...
       go_version: 1.21.4
 
+- job:
+    name: golang-build
+    parent: golang-go
+    nodeset:
+      nodes:
+        - name: ubuntu-jammy
+          label: ubuntu-jammy
+    vars:
+      go_command: go build main.go
+      go_version: 1.21.4
+
 - project:
     name: SovereignCloudStack/status-page-api
     merge-mode: squash-merge
