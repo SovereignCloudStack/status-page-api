@@ -16,7 +16,7 @@ type EchoLogger struct {
 func (el *EchoLogger) RequestLogger(_ echo.Context, values middleware.RequestLoggerValues) error {
 	logger := el.logger.Info()
 	if values.Error != nil {
-		logger = el.logger.Error().Err(values.Error)
+		logger = el.logger.Error().Err(values.Error) //nolint:zerologlint
 	}
 
 	logger.
