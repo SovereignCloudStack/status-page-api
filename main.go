@@ -60,8 +60,12 @@ func main() { //nolint:funlen
 		AllowOrigins: conf.CorsOrigins,
 	}))
 
+	// open api spec and swagger
 	echoServer.GET("/openapi.json", swagger.ServeOpenAPISpec)
-	echoServer.GET("/swagger", swagger.ServeSwagger)
+
+	if conf.SwaggerEnabled {
+		echoServer.GET("/swagger", swagger.ServeSwagger)
+	}
 
 	// DB setup
 	dbCon, err := gorm.Open(postgres.Open(conf.Database.ConnectionString), &gorm.Config{ //nolint:exhaustruct

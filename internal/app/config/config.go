@@ -20,12 +20,16 @@ type Config struct {
 	Database         Database
 	CorsOrigins      []string
 	Verbose          int
+	SwaggerEnabled   bool
 }
 
 const (
 	envPrefix = "SCS_STATUS_PAGE"
 
 	verbose = "verbose"
+
+	swaggerUIEnabled        = "swagger.ui.enabled"
+	swaggerUIEnabledDefault = false
 
 	databaseConnectionString        = "database.connection-string"
 	databaseConnectionStringDefault = "host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable" //nolint:lll
@@ -43,6 +47,8 @@ var corsOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknogl
 func setDefaults() {
 	viper.SetDefault(verbose, 0)
 
+	viper.SetDefault(swaggerUIEnabled, swaggerUIEnabledDefault)
+
 	viper.SetDefault(databaseConnectionString, databaseConnectionStringDefault)
 
 	viper.SetDefault(listenAddress, listenAddressDefault)
@@ -53,6 +59,8 @@ func setDefaults() {
 
 func setFlags() {
 	pflag.CountP(verbose, "v", "Increase log level")
+
+	pflag.Bool(swaggerUIEnabled, swaggerUIEnabledDefault, "Enable swagger UI for development.")
 
 	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string")
 
@@ -74,6 +82,7 @@ func buildConfig() *Config {
 		},
 		ListenAddress:    viper.GetString(listenAddress),
 		ProvisioningFile: viper.GetString(provisioningFile),
+		SwaggerEnabled:   viper.GetBool(swaggerUIEnabled),
 		Verbose:          viper.GetInt(verbose),
 	}
 }
