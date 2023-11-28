@@ -10,20 +10,15 @@ import (
 
 // Database holds configuration regarding the database connection.
 type Database struct {
-	ConnectionString string
-}
-
-// Server holds configuration regarding the server.
-type Server struct {
-	ListenAddress string
-	CorsOrigins   []string
+	ConnectionString string `json:"-"` // do not leak databse password when logging.
 }
 
 // Config holds all application configuration.
 type Config struct {
 	ProvisioningFile string
+	ListenAddress    string
 	Database         Database
-	Server           Server
+	CorsOrigins      []string
 	Verbose          int
 }
 
@@ -32,26 +27,26 @@ const (
 
 	verbose = "verbose"
 
-	databaseConnectionString        = "database-connection-string"
+	databaseConnectionString        = "database.connection-string"
 	databaseConnectionStringDefault = "host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable" //nolint:lll
 
-	serverListenAddress        = "server-listen-address"
-	serverListenAddressDefault = ":3000"
-	serverCorsOrigins          = "server-cors-origins"
+	listenAddress        = "listen-address"
+	listenAddressDefault = ":3000"
+	corsOrigins          = "cors-origins"
 
 	provisioningFile        = "provisioning-file"
 	provisioningFileDefault = "./provisioning.yaml"
 )
 
-var serverCorsOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
+var corsOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
 
 func setDefaults() {
 	viper.SetDefault(verbose, 0)
 
 	viper.SetDefault(databaseConnectionString, databaseConnectionStringDefault)
 
-	viper.SetDefault(serverListenAddress, serverListenAddressDefault)
-	viper.SetDefault(serverCorsOrigins, serverCorsOriginsDefault)
+	viper.SetDefault(listenAddress, listenAddressDefault)
+	viper.SetDefault(corsOrigins, corsOriginsDefault)
 
 	viper.SetDefault(provisioningFile, provisioningFileDefault)
 }
@@ -61,21 +56,23 @@ func setFlags() {
 
 	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string")
 
-	pflag.String(serverListenAddress, serverListenAddressDefault, "Server listen address")
-	pflag.StringArray(serverCorsOrigins, serverCorsOriginsDefault, "Server CORS origins to accept")
+	pflag.String(listenAddress, listenAddressDefault, "Server listen address")
+	pflag.StringArray(corsOrigins, corsOriginsDefault, "Server CORS origins to accept")
 
 	pflag.String(provisioningFile, provisioningFileDefault, "YAML file with startup provisioning")
 }
 
+func pflagNormalizer(_ *pflag.FlagSet, name string) pflag.NormalizedName {
+	return pflag.NormalizedName(strings.ReplaceAll(name, ".", "-"))
+}
+
 func buildConfig() *Config {
 	return &Config{
+		CorsOrigins: viper.GetStringSlice(corsOrigins),
 		Database: Database{
 			ConnectionString: viper.GetString(databaseConnectionString),
 		},
-		Server: Server{
-			ListenAddress: viper.GetString(serverListenAddress),
-			CorsOrigins:   viper.GetStringSlice(serverCorsOrigins),
-		},
+		ListenAddress:    viper.GetString(listenAddress),
 		ProvisioningFile: viper.GetString(provisioningFile),
 		Verbose:          viper.GetInt(verbose),
 	}
@@ -88,10 +85,11 @@ func New() (*Config, error) {
 
 	// envs
 	viper.SetEnvPrefix(envPrefix)
-	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_"))
+	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_", ".", "_"))
 	viper.AutomaticEnv()
 
 	// flags
+	pflag.CommandLine.SetNormalizeFunc(pflagNormalizer)
 	setFlags()
 	pflag.Parse()
 

@@ -4,6 +4,8 @@ DOC_DIR=docs
 HASH=$(shell git rev-parse --short HEAD)
 CONTAINER_RUNTIME?=docker
 
+SHELL := /bin/bash
+
 .PHONY: all go-fmt go-fump go-gci go-format go-lint go-build go-doc clean serve db-create db-start db-stop db-remove db-restart
 
 all: go-format go-lint go-test go-build
@@ -47,7 +49,7 @@ clean:
 	rm -f $(DOC_DIR)/*
 
 serve: go-build
-	$(BIN_DIR)/$(APP_NAME)
+	source ./load-secrets.sh && ./$(BIN_DIR)/$(APP_NAME)
 
 db-create:
 	${CONTAINER_RUNTIME} create -p 5432:5432 -e POSTGRES_PASSWORD=debug -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres --name scs-${APP_NAME}-db postgres:latest
