@@ -52,7 +52,7 @@ serve: go-build
 	source ./load-secrets.sh && ./$(BIN_DIR)/$(APP_NAME)
 
 db-create:
-	${CONTAINER_RUNTIME} create -p 5432:5432 -e POSTGRES_PASSWORD=debug -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres --name scs-${APP_NAME}-db postgres:latest
+	${CONTAINER_RUNTIME} create -p 5432:5432 -e POSTGRES_PASSWORD=debug -e POSTGRES_USER=postgres -e POSTGRES_DB=postgres --name scs-${APP_NAME}-db docker.io/library/postgres:latest
 
 db-start:
 	${CONTAINER_RUNTIME} start scs-${APP_NAME}-db
