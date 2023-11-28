@@ -31,6 +31,11 @@ func main() { //nolint:funlen
 		logger.Fatal().Err(err).Msg("error loading config")
 	}
 
+	err = conf.IsValid()
+	if err != nil {
+		logger.Fatal().Err(err).Msg("config is invalid")
+	}
+
 	// leveled logging
 	switch conf.Verbose {
 	case 1:
@@ -57,7 +62,7 @@ func main() { //nolint:funlen
 	echoServer.Use(middleware.Recover())
 	echoServer.Use(middleware.RemoveTrailingSlash())
 	echoServer.Use(middleware.CORSWithConfig(middleware.CORSConfig{ //nolint:exhaustruct
-		AllowOrigins: conf.CorsOrigins,
+		AllowOrigins: conf.AllowedOrigins,
 	}))
 
 	// open api spec and swagger

@@ -13,14 +13,44 @@ type Database struct {
 	ConnectionString string `json:"-"` // do not leak databse password when logging.
 }
 
+func (db Database) isValid() error {
+	if db.ConnectionString == "" {
+		return ErrNoDBConnectionString
+	}
+
+	return nil
+}
+
 // Config holds all application configuration.
 type Config struct {
 	ProvisioningFile string
 	ListenAddress    string
 	Database         Database
-	CorsOrigins      []string
+	AllowedOrigins   []string
 	Verbose          int
 	SwaggerEnabled   bool
+}
+
+// IsValid validates the config by checking own values and calling isValid on sub config objects.
+func (c Config) IsValid() error {
+	if c.ProvisioningFile == "" {
+		return ErrNoProvisioningFile
+	}
+
+	if c.ListenAddress == "" {
+		return ErrNoListenAddress
+	}
+
+	if len(c.AllowedOrigins) == 0 {
+		return ErrNoAllowedOrigins
+	}
+
+	err := c.Database.isValid()
+	if err != nil {
+		return fmt.Errorf("error validating database config: %w", err)
+	}
+
+	return nil
 }
 
 const (
@@ -32,17 +62,17 @@ const (
 	swaggerUIEnabledDefault = false
 
 	databaseConnectionString        = "database.connection-string"
-	databaseConnectionStringDefault = "host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable" //nolint:lll
+	databaseConnectionStringDefault = ""
 
 	listenAddress        = "listen-address"
 	listenAddressDefault = ":3000"
-	corsOrigins          = "cors-origins"
+	allowedOrigins       = "allowed-origins"
 
 	provisioningFile        = "provisioning-file"
 	provisioningFileDefault = "./provisioning.yaml"
 )
 
-var corsOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
+var allowedOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
 
 func setDefaults() {
 	viper.SetDefault(verbose, 0)
@@ -52,7 +82,7 @@ func setDefaults() {
 	viper.SetDefault(databaseConnectionString, databaseConnectionStringDefault)
 
 	viper.SetDefault(listenAddress, listenAddressDefault)
-	viper.SetDefault(corsOrigins, corsOriginsDefault)
+	viper.SetDefault(allowedOrigins, allowedOriginsDefault)
 
 	viper.SetDefault(provisioningFile, provisioningFileDefault)
 }
@@ -65,7 +95,7 @@ func setFlags() {
 	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string")
 
 	pflag.String(listenAddress, listenAddressDefault, "Server listen address")
-	pflag.StringArray(corsOrigins, corsOriginsDefault, "Server CORS origins to accept")
+	pflag.StringArray(allowedOrigins, allowedOriginsDefault, "Server CORS origins to accept")
 
 	pflag.String(provisioningFile, provisioningFileDefault, "YAML file with startup provisioning")
 }
@@ -76,12 +106,12 @@ func pflagNormalizer(_ *pflag.FlagSet, name string) pflag.NormalizedName {
 
 func buildConfig() *Config {
 	return &Config{
-		CorsOrigins: viper.GetStringSlice(corsOrigins),
+		AllowedOrigins: viper.GetStringSlice(allowedOrigins),
 		Database: Database{
-			ConnectionString: viper.GetString(databaseConnectionString),
+			ConnectionString: strings.TrimSpace(viper.GetString(databaseConnectionString)),
 		},
-		ListenAddress:    viper.GetString(listenAddress),
-		ProvisioningFile: viper.GetString(provisioningFile),
+		ListenAddress:    strings.TrimSpace(viper.GetString(listenAddress)),
+		ProvisioningFile: strings.TrimSpace(viper.GetString(provisioningFile)),
 		SwaggerEnabled:   viper.GetBool(swaggerUIEnabled),
 		Verbose:          viper.GetInt(verbose),
 	}
