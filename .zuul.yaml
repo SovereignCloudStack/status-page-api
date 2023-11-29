@@ -30,7 +30,7 @@
         - name: ubuntu-jammy
           label: ubuntu-jammy
     vars:
-      go_command: go build main.go
+      go_command: build main.go
       go_version: 1.21.4
 
 - project:
