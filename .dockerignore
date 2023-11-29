@@ -1,0 +1,7 @@
+/.git/
+/.github/
+/bin/
+/.vscode/
+.golangci.yaml
+.zuul.yaml
+Makefile
