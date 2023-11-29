@@ -41,3 +41,4 @@
       jobs:
         - golang-lint
         - golang-test
+        - golang-build
