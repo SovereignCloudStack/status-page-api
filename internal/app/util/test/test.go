@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/SovereignCloudStack/status-page-api/internal/app/logger"
+	"github.com/SovereignCloudStack/status-page-api/internal/app/logging"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/gomega" //nolint:revive,stylecheck
 	"github.com/rs/zerolog"
@@ -48,7 +48,7 @@ func MustMockGorm(gormLogger *zerolog.Logger) (*sql.DB, sqlmock.Sqlmock, *gorm.D
 	dbCon, err := gorm.Open(postgres.New(postgres.Config{ //nolint:exhaustruct
 		Conn: sqlDB,
 	}), &gorm.Config{ //nolint:exhaustruct
-		Logger: logger.NewGormLogger(gormLogger),
+		Logger: logging.NewGormLogger(gormLogger),
 	})
 	Ω(err).ShouldNot(HaveOccurred())
 
@@ -90,7 +90,7 @@ func MustCreateEchoContext( //nolint: ireturn
 	responseWriter http.ResponseWriter,
 ) echo.Context {
 	echoServer := echo.New()
-	echoServer.Use(logger.NewEchoLoggerConfig(echoLogger))
+	echoServer.Use(logging.NewEchoZerlogLogger(echoLogger))
 	ctx := echoServer.NewContext(request, responseWriter)
 
 	return ctx
