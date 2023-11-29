@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
@@ -25,16 +26,16 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 		var transactionErr error
 		generation, transactionErr = DbDef.GetCurrentPhaseGeneration(dbTx)
 		if transactionErr != nil {
-			logger.Error().Err(transactionErr).Msg("error getting current generation")
-
-			return echo.ErrInternalServerError
+			return fmt.Errorf("error getting current generation: %w", transactionErr)
 		}
 
 		if params.Generation != nil {
-			if *params.Generation > generation || *params.Generation < 1 {
-				logger.Warn().Msg("phase generation not found")
+			if *params.Generation < 1 {
+				return fmt.Errorf("%w: %d", ErrInvalidPhaseGeneration, *params.Generation)
+			}
 
-				return echo.ErrNotFound
+			if *params.Generation > generation {
+				return fmt.Errorf("%w: %d", ErrPhaseGenerationNotFound, *params.Generation)
 			}
 
 			generation = *params.Generation
@@ -46,9 +47,7 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 
 		res := dbTx.Where("generation = ?", generation).Order("\"order\" asc").Find(&phases)
 		if res.Error != nil {
-			logger.Error().Err(res.Error).Msg("error loading phase list")
-
-			return echo.ErrInternalServerError
+			return fmt.Errorf("error loading phase list: %w", res.Error)
 		}
 
 		data = make([]api.Phase, len(phases))
@@ -59,9 +58,15 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 		return nil
 	})
 	if err != nil {
-		if errors.Is(err, &echo.HTTPError{}) { //nolint:exhaustruct
-			// Echo errors are already defined and logged
-			return err //nolint:wrapcheck
+		switch {
+		case errors.Is(err, ErrInvalidPhaseGeneration):
+			logger.Warn().Err(err).Send()
+
+			return echo.ErrBadRequest
+		case errors.Is(err, ErrPhaseGenerationNotFound):
+			logger.Warn().Err(err).Send()
+
+			return echo.ErrNotFound
 		}
 
 		logger.Error().Err(err).Msg("error in database transaction")
@@ -93,6 +98,12 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error { //nolint:funl
 		return echo.ErrInternalServerError
 	}
 
+	if len(request.Phases) == 0 {
+		logger.Warn().Msg("empty request")
+
+		return echo.ErrBadRequest
+	}
+
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
 	err = dbSession.Transaction(func(dbTx *gorm.DB) error {
@@ -100,9 +111,7 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error { //nolint:funl
 
 		generation, transactionErr = DbDef.GetCurrentPhaseGeneration(dbTx)
 		if transactionErr != nil {
-			logger.Error().Err(transactionErr).Msg("error getting current phase generation")
-
-			return echo.ErrInternalServerError
+			return fmt.Errorf("error getting current generation: %w", transactionErr)
 		}
 
 		generation++
@@ -124,19 +133,12 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error { //nolint:funl
 
 		res := dbTx.Create(phases)
 		if res.Error != nil {
-			logger.Error().Err(res.Error).Msg("error creating phase list")
-
-			return echo.ErrInternalServerError
+			return fmt.Errorf("error creating phase list: %w", res.Error)
 		}
 
 		return nil
 	})
 	if err != nil {
-		if errors.Is(err, &echo.HTTPError{}) { //nolint:exhaustruct
-			// Echo errors are already defined and logged
-			return err //nolint:wrapcheck
-		}
-
 		logger.Error().Err(err).Msg("error in transaction")
 
 		return echo.ErrInternalServerError

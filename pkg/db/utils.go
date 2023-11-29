@@ -1,11 +1,12 @@
 package db
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
 // GetHighestIncidentUpdateOrder retrieves the currently highest order for an incident.
-func GetHighestIncidentUpdateOrder(dbCon *gorm.DB, incidentID string) (int, error) {
+func GetHighestIncidentUpdateOrder(dbCon *gorm.DB, incidentID uuid.UUID) (int, error) {
 	var order int
 	res := dbCon.
 		Model(&IncidentUpdate{}). //nolint:exhaustruct

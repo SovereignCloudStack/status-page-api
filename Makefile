@@ -31,6 +31,11 @@ go-lint-fix:
 go-test:
 	go test ./...
 
+go-test-coverage:
+	go test -coverprofile coverage.out ./...
+	go tool cover -func coverage.out
+	rm -f coverage.out
+
 $(BIN_DIR):
 	@mkdir -p $@
 
