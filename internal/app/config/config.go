@@ -105,10 +105,12 @@ func pflagNormalizer(_ *pflag.FlagSet, name string) pflag.NormalizedName {
 }
 
 func buildConfig() *Config {
+	quoteReplacer := strings.NewReplacer("\"", "", "'", "")
+
 	return &Config{
 		AllowedOrigins: viper.GetStringSlice(allowedOrigins),
 		Database: Database{
-			ConnectionString: strings.TrimSpace(viper.GetString(databaseConnectionString)),
+			ConnectionString: strings.TrimSpace(quoteReplacer.Replace((viper.GetString(databaseConnectionString)))),
 		},
 		ListenAddress:    strings.TrimSpace(viper.GetString(listenAddress)),
 		ProvisioningFile: strings.TrimSpace(viper.GetString(provisioningFile)),
