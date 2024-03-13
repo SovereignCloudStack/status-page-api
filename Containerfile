@@ -17,7 +17,9 @@ WORKDIR /app
 COPY --from=builder /build/status-page-api .
 COPY provisioning.yaml .
 COPY LICENSE .
+COPY entrypoint.sh .
 
 EXPOSE 3000/tcp
 
-ENTRYPOINT /app/status-page-api
+ENTRYPOINT [ "/app/entrypoint.sh" ]
+CMD [ "/app/status-page-api" ]
