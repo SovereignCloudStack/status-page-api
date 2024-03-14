@@ -54,7 +54,7 @@ func (c Config) IsValid() error {
 }
 
 const (
-	envPrefix = "SCS_STATUS_PAGE"
+	envPrefix = "STATUS_PAGE"
 
 	verbose = "verbose"
 

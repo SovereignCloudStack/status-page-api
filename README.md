@@ -18,10 +18,10 @@ Changeing the listining address to `localhost:3001`.
 
 #### Environment
 
-Every config key is prefixed by `SCS_STATUS_PAGE`.
+Every config key is prefixed by `STATUS_PAGE`.
 
 ```bash
-SCS_STATUS_PAGE_LISTEN_ADDRESS=:3001 ./bin/status-page-api
+STATUS_PAGE_LISTEN_ADDRESS=:3001 ./bin/status-page-api
 ```
 
 ### Verbosity
@@ -32,11 +32,11 @@ Setting verbosity by environment variables requires setting it to a number.
 
 ```env
 # INFO level
-SCS_STATUS_PAGE_VERBOSE=1
+STATUS_PAGE_VERBOSE=1
 # DEBUG level
-SCS_STATUS_PAGE_VERBOSE=2
+STATUS_PAGE_VERBOSE=2
 # TRACE level
-SCS_STATUS_PAGE_VERBOSE=3
+STATUS_PAGE_VERBOSE=3
 ```
 
 ## Development settings
@@ -44,16 +44,16 @@ SCS_STATUS_PAGE_VERBOSE=3
 Create `secrets.env` for config:
 
 ```env
-SCS_STATUS_PAGE_VERBOSE=3
-SCS_STATUS_PAGE_SWAGGER_UI_ENABLED=true
-SCS_STATUS_PAGE_LISTEN_ADDRESS=:3000
-SCS_STATUS_PAGE_CORS_ORIGINS="localhost 127.0.0.1"
-SCS_STATUS_PAGE_DATABASE_CONNECTION_STRING="host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable"
-SCS_STATUS_PAGE_PROVISIONING_FILE=./provisioning.yaml
+STATUS_PAGE_VERBOSE=3
+STATUS_PAGE_SWAGGER_UI_ENABLED=true
+STATUS_PAGE_LISTEN_ADDRESS=:3000
+STATUS_PAGE_CORS_ORIGINS="localhost 127.0.0.1"
+STATUS_PAGE_DATABASE_CONNECTION_STRING="host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable"
+STATUS_PAGE_PROVISIONING_FILE=./provisioning.yaml
 
 ```
 
-`SCS_STATUS_PAGE_SWAGGER_UI_ENABLED` enables the [Swagger Web UI](https://swagger.io/tools/swagger-ui/) for local debugging purposes, which is disabled by default.
+`STATUS_PAGE_SWAGGER_UI_ENABLED` enables the [Swagger Web UI](https://swagger.io/tools/swagger-ui/) for local debugging purposes, which is disabled by default.
 
 ### Note
 
