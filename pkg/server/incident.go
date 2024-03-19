@@ -325,7 +325,6 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 
 		return nil
 	})
-
 	if err != nil {
 		logger.Error().Err(err).Msg("error in transaction")
 
