@@ -21,8 +21,8 @@ var defaultZerlogRequestLoggerConfig = middleware.RequestLoggerConfig{ //nolint:
 func NewZerlogRequestLogger(
 	logger *zerolog.Logger,
 ) func(ctx echo.Context, values middleware.RequestLoggerValues) error {
-	return func(ctx echo.Context, values middleware.RequestLoggerValues) error {
-		event := logger.Info()
+	return func(_ echo.Context, values middleware.RequestLoggerValues) error {
+		event := logger.Info() //nolint:zerologlint
 		if values.Error != nil {
 			event = logger.Error().Err(values.Error) //nolint:zerologlint
 		} else if values.Status >= 400 && values.Status < 600 {

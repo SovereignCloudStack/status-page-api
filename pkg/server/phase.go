@@ -24,6 +24,7 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 
 	err := dbSession.Transaction(func(dbTx *gorm.DB) error {
 		var transactionErr error
+
 		generation, transactionErr = DbDef.GetCurrentPhaseGeneration(dbTx)
 		if transactionErr != nil {
 			return fmt.Errorf("error getting current generation: %w", transactionErr)
