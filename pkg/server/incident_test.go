@@ -56,7 +56,7 @@ var _ = Describe("Incident", func() {
 		expectedIncidentsQuery = regexp.
 					QuoteMeta(`SELECT * FROM "incidents" WHERE NOT (began_at < $1 AND ended_at < $2) AND NOT (began_at > $3 AND ended_at > $4) OR (ended_at IS NULL AND began_at <= $5)`) //nolint:lll
 		expectedIncidentQuery = regexp.
-					QuoteMeta(`SELECT * FROM "incidents" WHERE id = $1 ORDER BY "incidents"."id" LIMIT 1`)
+					QuoteMeta(`SELECT * FROM "incidents" WHERE id = $1 ORDER BY "incidents"."id" LIMIT $2`)
 		expectedIncidentInsert = regexp.
 					QuoteMeta(`INSERT INTO "incidents" ("id","display_name","description","began_at","ended_at","phase_generation","phase_order") VALUES ($1,$2,$3,$4,$5,$6,$7)`) //nolint:lll
 		expectedIncidentDelete = regexp.
@@ -498,7 +498,7 @@ var _ = Describe("Incident", func() {
 				// Arrange
 				sqlMock.
 					ExpectQuery(expectedIncidentQuery).
-					WithArgs(incidentID).
+					WithArgs(incidentID, 1).
 					WillReturnRows(
 						incidentRows.AddRow(
 							incident.ID,
@@ -741,7 +741,7 @@ var _ = Describe("IncidentUpdate", func() {
 		expectedIncidentUpdatesQuery = regexp.
 						QuoteMeta(`SELECT * FROM "incident_updates" WHERE incident_id = $1`)
 		expectedIncidentUpdateQuery = regexp.
-						QuoteMeta(`SELECT * FROM "incident_updates" WHERE incident_id = $1 AND "order" = $2 ORDER BY "incident_updates"."incident_id" LIMIT 1`) //nolint:lll
+						QuoteMeta(`SELECT * FROM "incident_updates" WHERE incident_id = $1 AND "order" = $2 ORDER BY "incident_updates"."incident_id" LIMIT $3`) //nolint:lll
 		expectedIncidentUpdateInsert = regexp.
 						QuoteMeta(`INSERT INTO "incident_updates" ("incident_id","order","display_name","description","created_at") VALUES ($1,$2,$3,$4,$5)`) //nolint:lll
 		expectedIncidentUpdateDelete = regexp.
@@ -1132,7 +1132,7 @@ var _ = Describe("IncidentUpdate", func() {
 				// Arrange
 				sqlMock.
 					ExpectQuery(expectedIncidentUpdateQuery).
-					WithArgs(incidentID, incidentUpdateOrder).
+					WithArgs(incidentID, incidentUpdateOrder, 1).
 					WillReturnRows(
 						incidentUpdateRows.AddRow(
 							incidentUpdate.IncidentID,  // incident_id
@@ -1162,7 +1162,7 @@ var _ = Describe("IncidentUpdate", func() {
 				// Arrange
 				sqlMock.
 					ExpectQuery(expectedIncidentUpdateQuery).
-					WithArgs(incidentID, incidentUpdateOrder).
+					WithArgs(incidentID, incidentUpdateOrder, 1).
 					WillReturnError(test.ErrTestError)
 
 				// Act
