@@ -6,7 +6,7 @@ toolchain go1.21.4
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/SovereignCloudStack/status-page-openapi/pkg/api v0.0.0-20240307115744-e4466121a080
+	github.com/SovereignCloudStack/status-page-openapi/pkg/api v0.0.0-20240325142108-e1b8fe66a86e
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/onsi/ginkgo/v2 v2.15.0
