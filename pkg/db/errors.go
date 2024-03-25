@@ -2,8 +2,11 @@ package db
 
 import "errors"
 
-// ErrInvalidLabelData Data is of invalid type.
 var (
+	// ErrInvalidLabelData Data is of invalid type.
 	ErrInvalidLabelData = errors.New("label data is invalid")
-	ErrEmptyValue       = errors.New("value is empty")
+	// ErrEmptyValue Value is empty.
+	ErrEmptyValue = errors.New("value is empty")
+	// ErrSeverityValueOutOfRange Severity value is out of range.
+	ErrSeverityValueOutOfRange = errors.New("severity value out of range")
 )
