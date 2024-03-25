@@ -84,7 +84,7 @@ func MustCreateRequestAndResponseWriter(
 }
 
 // MustCreateEchoContext creates an echo context with the given logger and request and response writer.
-func MustCreateEchoContext( //nolint: ireturn
+func MustCreateEchoContext( //nolint:ireturn
 	echoLogger *zerolog.Logger,
 	request *http.Request,
 	responseWriter http.ResponseWriter,
