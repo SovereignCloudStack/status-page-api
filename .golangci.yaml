@@ -7,10 +7,11 @@ linters:
     - bodyclose
     - containedctx
     - contextcheck
+    - copyloopvar
     - cyclop
     # - deadcode # deprecated
     - decorder
-    # - depguard
+    # - depguard # unused
     - dogsled
     - dupl
     - dupword
@@ -24,7 +25,7 @@ linters:
     # - exhaustivestruct # deprecated
     - exhaustruct
     - exportloopref
-    - forbidigo
+    # - forbidigo # unused
     - forcetypeassert
     - funlen
     - gci
@@ -32,6 +33,7 @@ linters:
     - gocheckcompilerdirectives
     - gochecknoglobals
     - gochecknoinits
+    - gochecksumtype
     - gocognit
     - goconst
     - gocritic
@@ -55,9 +57,11 @@ linters:
     - grouper
     # - ifshort # deprecated
     - importas
+    - inamedparam
     - ineffassign
     - interfacebloat
     # - interfacer # deprecated
+    - intrange
     - ireturn
     - lll
     - loggercheck
@@ -78,13 +82,17 @@ linters:
     # - nosnakecase # deprecated
     - nosprintfhostport
     - paralleltest
+    - perfsprint
     - prealloc
     - predeclared
     - promlinter
+    - protogetter
     - reassign
     - revive
     - rowserrcheck
     # - scopelint # deprecated
+    - sloglint
+    - spancheck
     - sqlclosecheck
     - staticcheck
     # - structcheck # deprecated
@@ -93,6 +101,7 @@ linters:
     - tagliatelle
     - tenv
     - testableexamples
+    - testifylint
     - testpackage
     - thelper
     - tparallel
@@ -111,8 +120,6 @@ linters:
 
 linters-settings:
   govet:
-    check-shadowing: true
-    check-fieldalignment: true
     enable-all: true
   misspell:
     locale: US
@@ -131,5 +138,9 @@ issues:
         - dupl
         - exhaustruct
         - gochecknoglobals
+
 run:
   allow-parallel-runners: true
+
+output:
+  show-stats: true

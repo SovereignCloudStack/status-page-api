@@ -3,7 +3,6 @@ package server_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -53,6 +52,8 @@ var _ = Describe("Severity", func() {
 			DisplayName: test.Ptr("broken"),
 			Value:       test.Ptr(50),
 		}
+
+		severityEndpoint = "/severities/" + *severity.DisplayName
 	)
 
 	BeforeEach(func() {
@@ -228,7 +229,7 @@ var _ = Describe("Severity", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodDelete,
-				fmt.Sprintf("/severities/%s", *severity.DisplayName),
+				severityEndpoint,
 				nil,
 			)
 		})
@@ -303,7 +304,7 @@ var _ = Describe("Severity", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				fmt.Sprintf("/severities/%s", *severity.DisplayName),
+				severityEndpoint,
 				nil,
 			)
 		})
@@ -372,7 +373,7 @@ var _ = Describe("Severity", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPatch,
-				fmt.Sprintf("/severities/%s", *severity.DisplayName),
+				severityEndpoint,
 				api.Severity{
 					DisplayName: test.Ptr("impacted"),
 				},
@@ -405,7 +406,7 @@ var _ = Describe("Severity", func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/severities/%s", *severity.DisplayName),
+					severityEndpoint,
 					nil,
 				)
 

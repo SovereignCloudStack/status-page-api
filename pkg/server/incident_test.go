@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,7 +24,11 @@ import (
 	"gorm.io/gorm"
 )
 
-const incidentID = "91fd8fa3-4288-4940-bcfb-9e89d82f3522"
+const (
+	incidentID        = "91fd8fa3-4288-4940-bcfb-9e89d82f3522"
+	incidentsEndpoint = "/incidents"
+	incidentEndpoint  = incidentsEndpoint + "/" + incidentID
+)
 
 var (
 	// Sub loggers.
@@ -135,7 +140,7 @@ var _ = Describe("Incident", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				"/incidents",
+				incidentsEndpoint,
 				nil,
 			)
 		})
@@ -215,7 +220,7 @@ var _ = Describe("Incident", func() {
 					ctx, res = test.MustCreateEchoContextAndResponseWriter(
 						echoLogger,
 						http.MethodGet,
-						"/incidents",
+						incidentsEndpoint,
 						nil,
 					)
 
@@ -238,7 +243,7 @@ var _ = Describe("Incident", func() {
 					ctx, res = test.MustCreateEchoContextAndResponseWriter(
 						echoLogger,
 						http.MethodGet,
-						"/incidents",
+						incidentsEndpoint,
 						nil,
 					)
 
@@ -261,7 +266,7 @@ var _ = Describe("Incident", func() {
 					ctx, res = test.MustCreateEchoContextAndResponseWriter(
 						echoLogger,
 						http.MethodGet,
-						"/incidents",
+						incidentsEndpoint,
 						nil,
 					)
 
@@ -306,7 +311,7 @@ var _ = Describe("Incident", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPost,
-				"/incidents",
+				incidentsEndpoint,
 				api.Incident{
 					DisplayName: test.Ptr("Disk impact"),
 				},
@@ -344,7 +349,7 @@ var _ = Describe("Incident", func() {
 		Context("with empty request", func() {
 			It("should return 400 bad request", func() {
 				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, "/incidents", nil)
+				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, incidentsEndpoint, nil)
 
 				// Act
 				err := handlers.CreateIncident(ctx)
@@ -374,7 +379,7 @@ var _ = Describe("Incident", func() {
 		Context("with invalid request", func() {
 			It("should return 400 bad request", func() {
 				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, "/incidents", api.Incident{
+				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, incidentsEndpoint, api.Incident{
 					DisplayName: test.Ptr("Disk impact"),
 					Affects: &api.ImpactComponentList{
 						{
@@ -404,7 +409,7 @@ var _ = Describe("Incident", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodDelete,
-				fmt.Sprintf("/incidents/%s", incidentID),
+				incidentEndpoint,
 				nil,
 			)
 		})
@@ -488,7 +493,7 @@ var _ = Describe("Incident", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				fmt.Sprintf("/incidents/%s", incidentID),
+				incidentEndpoint,
 				nil,
 			)
 		})
@@ -596,7 +601,7 @@ var _ = Describe("Incident", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPatch,
-				fmt.Sprintf("/incidents/%s", incidentID),
+				incidentEndpoint,
 				api.Incident{
 					DisplayName: test.Ptr("Network impact"),
 				},
@@ -629,7 +634,7 @@ var _ = Describe("Incident", func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/incidents/%s", incidentID),
+					incidentEndpoint,
 					nil,
 				)
 
@@ -648,7 +653,7 @@ var _ = Describe("Incident", func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/incidents/%s", "ABC-123"),
+					"/incidents/ABC-123",
 					api.Incident{
 						DisplayName: test.Ptr("Network impact"),
 					},
@@ -707,7 +712,7 @@ var _ = Describe("Incident", func() {
 				ctx, _ = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/incidents/%s", incidentID),
+					incidentEndpoint,
 					api.Incident{
 						DisplayName: test.Ptr("Disk impact"),
 						Affects: &api.ImpactComponentList{
@@ -730,7 +735,10 @@ var _ = Describe("Incident", func() {
 })
 
 var _ = Describe("IncidentUpdate", func() {
-	const incidentUpdateOrder = 0
+	const (
+		incidentUpdateOrder     = 0
+		incidentUpdatesEndpoint = incidentEndpoint + "/updates"
+	)
 
 	var (
 		// mocked sql rows
@@ -759,6 +767,8 @@ var _ = Describe("IncidentUpdate", func() {
 			Description: test.Ptr("We started to investigate the impact."),
 			CreatedAt:   &now,
 		}
+
+		incidentUpdateEndpoint = incidentUpdatesEndpoint + strconv.Itoa(incidentUpdateOrder)
 	)
 
 	BeforeEach(func() {
@@ -792,7 +802,7 @@ var _ = Describe("IncidentUpdate", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				fmt.Sprintf("/incidentupdates/%s", incidentID),
+				incidentUpdatesEndpoint,
 				nil,
 			)
 		})
@@ -853,7 +863,7 @@ var _ = Describe("IncidentUpdate", func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodGet,
-					"/incidentupdates/ABC-123",
+					"/incident/ABC-123/updates",
 					nil,
 				)
 
@@ -892,7 +902,7 @@ var _ = Describe("IncidentUpdate", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPost,
-				fmt.Sprintf("/incidentupdates/%s", incidentID),
+				incidentUpdatesEndpoint,
 				api.IncidentUpdate{
 					DisplayName: test.Ptr("Investigation started"),
 					Description: test.Ptr("We started to investigate the impact."),
@@ -938,7 +948,7 @@ var _ = Describe("IncidentUpdate", func() {
 				ctx, _ = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPost,
-					fmt.Sprintf("/incidentupdates/%s", incidentID),
+					incidentUpdatesEndpoint,
 					nil,
 				)
 
@@ -1030,7 +1040,7 @@ var _ = Describe("IncidentUpdate", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodDelete,
-				fmt.Sprintf("/incidentupdates/%s/%d", incidentID, incidentUpdateOrder),
+				incidentUpdateEndpoint,
 				nil,
 			)
 		})
@@ -1098,7 +1108,7 @@ var _ = Describe("IncidentUpdate", func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodDelete,
-					fmt.Sprintf("/incidentupdates/ABC-123/%d", incidentUpdateOrder),
+					fmt.Sprintf("/incident/ABC-123/updates/%d", incidentUpdateOrder),
 					nil,
 				)
 				// Act
@@ -1122,7 +1132,7 @@ var _ = Describe("IncidentUpdate", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				fmt.Sprintf("/incidentupdates/%s/%d", incidentID, incidentUpdateOrder),
+				incidentUpdateEndpoint,
 				nil,
 			)
 		})
@@ -1180,7 +1190,7 @@ var _ = Describe("IncidentUpdate", func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodGet,
-					fmt.Sprintf("/incidentupdates/ABC-123/%d", incidentUpdateOrder),
+					fmt.Sprintf("/incident/ABC-123/updates/%d", incidentUpdateOrder),
 					nil,
 				)
 
@@ -1219,7 +1229,7 @@ var _ = Describe("IncidentUpdate", func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPatch,
-				fmt.Sprintf("/incidentupdates/%s/%d", incidentID, incidentUpdateOrder),
+				incidentUpdateEndpoint,
 				api.IncidentUpdate{
 					Description: test.Ptr("NIC was down"),
 				},
@@ -1252,7 +1262,7 @@ var _ = Describe("IncidentUpdate", func() {
 				ctx, _ = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/incidentupdates/%s/%d", incidentID, incidentUpdateOrder),
+					incidentUpdateEndpoint,
 					nil,
 				)
 

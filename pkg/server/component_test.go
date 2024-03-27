@@ -3,7 +3,6 @@ package server_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -23,7 +22,11 @@ import (
 )
 
 var _ = Describe("Component", Ordered, func() {
-	const componentID = "7fecf595-6352-4906-a0d8-b3243ee62ec8"
+	const (
+		componentID        = "7fecf595-6352-4906-a0d8-b3243ee62ec8"
+		componentsEndpoint = "/components"
+		componentEndpoint  = componentsEndpoint + "/" + componentID
+	)
 
 	var (
 		// sub loggers
@@ -104,7 +107,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				"/components",
+				componentsEndpoint,
 				nil,
 			)
 		})
@@ -183,7 +186,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPost,
-				"/components",
+				componentsEndpoint,
 				api.Component{
 					DisplayName: test.Ptr("Storage"),
 				},
@@ -219,7 +222,7 @@ var _ = Describe("Component", Ordered, func() {
 		Context("with empty request", func() {
 			It("should return 400 bad request", func() {
 				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, "/components", nil)
+				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, componentsEndpoint, nil)
 
 				// Act
 				err := handlers.CreateComponent(ctx)
@@ -258,7 +261,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodDelete,
-				fmt.Sprintf("/components/%s", componentID),
+				componentEndpoint,
 				nil,
 			)
 		})
@@ -342,7 +345,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				fmt.Sprintf("/components/%s", componentID),
+				componentEndpoint,
 				nil,
 			)
 		})
@@ -434,7 +437,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPatch,
-				fmt.Sprintf("/components/%s", componentID),
+				componentEndpoint,
 				api.Component{
 					DisplayName: test.Ptr("Network"),
 				},
@@ -467,7 +470,7 @@ var _ = Describe("Component", Ordered, func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/components/%s", componentID),
+					componentEndpoint,
 					nil,
 				)
 
@@ -486,7 +489,7 @@ var _ = Describe("Component", Ordered, func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/components/%s", "ABC-123"),
+					"/components/ABC-123",
 					api.Component{
 						DisplayName: test.Ptr("Network"),
 					},

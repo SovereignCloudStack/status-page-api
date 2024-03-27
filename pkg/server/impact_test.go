@@ -3,7 +3,6 @@ package server_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -23,7 +22,11 @@ import (
 )
 
 var _ = Describe("Impact", Ordered, func() {
-	const impactTypeID = "c3fc130d-e6c4-4f94-86ba-e51fbdfc5d0c"
+	const (
+		impactTypeID        = "c3fc130d-e6c4-4f94-86ba-e51fbdfc5d0c"
+		impactTypesEndpoint = "/impactTypes"
+		impactTypeEndpoint  = impactTypesEndpoint + "/" + impactTypeID
+	)
 
 	var (
 		// sub loggers
@@ -95,7 +98,7 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				"/impacttypes",
+				impactTypesEndpoint,
 				nil,
 			)
 		})
@@ -170,7 +173,7 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPost,
-				"/impactTypes",
+				impactTypesEndpoint,
 				api.ImpactType{
 					DisplayName: test.Ptr("Performance degration"),
 				},
@@ -206,7 +209,7 @@ var _ = Describe("Impact", Ordered, func() {
 		Context("with empty request", func() {
 			It("should return 400 bad request", func() {
 				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, "/impactTypes", nil)
+				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, impactTypesEndpoint, nil)
 
 				// Act
 				err := handlers.CreateImpactType(ctx)
@@ -245,7 +248,7 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodDelete,
-				fmt.Sprintf("/impactTypes/%s", impactTypeID),
+				impactTypeEndpoint,
 				nil,
 			)
 		})
@@ -329,7 +332,7 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				fmt.Sprintf("/impactTypes/%s", impactTypeID),
+				impactTypeEndpoint,
 				nil,
 			)
 		})
@@ -417,7 +420,7 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPatch,
-				fmt.Sprintf("/impactTypes/%s", impactTypeID),
+				impactTypeEndpoint,
 				api.ImpactType{
 					DisplayName: test.Ptr("Connectivity problems"),
 				},
@@ -450,7 +453,7 @@ var _ = Describe("Impact", Ordered, func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/impactTypes/%s", impactTypeID),
+					impactTypeEndpoint,
 					nil,
 				)
 
@@ -469,7 +472,7 @@ var _ = Describe("Impact", Ordered, func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/impactTypes/%s", "ABC-123"),
+					"/impactTypes/ABC-123",
 					api.ImpactType{
 						DisplayName: test.Ptr("Connectivity problems"),
 					},

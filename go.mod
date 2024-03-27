@@ -1,12 +1,10 @@
 module github.com/SovereignCloudStack/status-page-api
 
-go 1.21
-
-toolchain go1.21.4
+go 1.22.1
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/SovereignCloudStack/status-page-openapi/pkg/api v0.0.0-20240325142108-e1b8fe66a86e
+	github.com/SovereignCloudStack/status-page-openapi/pkg/api v0.0.0-20240325142952-43819c5eb61d
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.11.4
 	github.com/onsi/ginkgo/v2 v2.15.0
@@ -60,7 +58,7 @@ require (
 	github.com/valyala/fasttemplate v1.2.2 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/exp v0.0.0-20240318143956-a85f2c67cd81 // indirect
+	golang.org/x/exp v0.0.0-20240325151524-a685a6edb6d8 // indirect
 	golang.org/x/net v0.22.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
