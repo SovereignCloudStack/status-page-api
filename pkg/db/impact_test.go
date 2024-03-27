@@ -83,6 +83,7 @@ var _ = Describe("Impact", func() {
 	const (
 		componentID = "7fecf595-6352-4906-a0d8-b3243ee62ec8"
 		incidentID  = "91fd8fa3-4288-4940-bcfb-9e89d82f3522"
+		severity    = 50
 	)
 
 	componentUUID := uuid.MustParse(componentID)
@@ -95,6 +96,7 @@ var _ = Describe("Impact", func() {
 					{
 						Reference: test.Ptr(componentID),
 						Type:      test.Ptr(impactTypeID),
+						Severity:  test.Ptr(severity),
 					},
 				}
 
@@ -102,6 +104,7 @@ var _ = Describe("Impact", func() {
 					{
 						ComponentID:  &componentUUID,
 						ImpactTypeID: &impactTypeUUID,
+						Severity:     test.Ptr(severity),
 					},
 				}
 

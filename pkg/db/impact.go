@@ -44,6 +44,8 @@ type Impact struct {
 	IncidentID   *ID `gorm:"primaryKey"`
 	ComponentID  *ID `gorm:"primaryKey"`
 	ImpactTypeID *ID `gorm:"primaryKey"`
+
+	Severity *api.SeverityValue `gorm:"type:smallint"`
 }
 
 // AffectsFromImpactComponentList parses a [api.ImpactComponentList] to an [Impact] list.
@@ -67,6 +69,8 @@ func AffectsFromImpactComponentList(componentImpacts *api.ImpactComponentList) (
 
 		impacts[impactIndex].ComponentID = &componentID
 		impacts[impactIndex].ImpactTypeID = &impactTypeID
+
+		impacts[impactIndex].Severity = impact.Severity
 	}
 
 	return &impacts, nil
