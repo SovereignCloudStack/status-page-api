@@ -3,7 +3,6 @@ package server_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -23,7 +22,11 @@ import (
 )
 
 var _ = Describe("Component", Ordered, func() {
-	const componentID = "7fecf595-6352-4906-a0d8-b3243ee62ec8"
+	const (
+		componentID        = "7fecf595-6352-4906-a0d8-b3243ee62ec8"
+		componentsEndpoint = "/components"
+		componentEndpoint  = componentsEndpoint + "/" + componentID
+	)
 
 	var (
 		// sub loggers
@@ -45,8 +48,8 @@ var _ = Describe("Component", Ordered, func() {
 
 		// expected SQL
 		expectedComponentsQuery = regexp.QuoteMeta(`SELECT * FROM "components"`)
-		expectedComponentQuery  = regexp.QuoteMeta(`SELECT * FROM "components" WHERE id = $1 ORDER BY "components"."id" LIMIT 1`) //nolint:lll
-		expectedComponentInsert = regexp.QuoteMeta(`INSERT INTO "components" ("id","display_name","labels") VALUES ($1,$2,$3)`)   //nolint:lll
+		expectedComponentQuery  = regexp.QuoteMeta(`SELECT * FROM "components" WHERE id = $1 ORDER BY "components"."id" LIMIT $2`) //nolint:lll
+		expectedComponentInsert = regexp.QuoteMeta(`INSERT INTO "components" ("id","display_name","labels") VALUES ($1,$2,$3)`)    //nolint:lll
 		expectedComponentDelete = regexp.QuoteMeta(`DELETE FROM "components" WHERE id = $1`)
 		expectedComponentUpdate = regexp.QuoteMeta(`UPDATE "components" SET "display_name"=$1 WHERE "id" = $2`)
 		expectedImpactQuery     = `SELECT .+ FROM "impacts" LEFT JOIN "incidents" "Incident" ON "impacts"."incident_id" = "Incident"."id" WHERE ended_at IS NULL AND "impacts"."component_id" = \$1` //nolint:lll
@@ -104,7 +107,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				"/components",
+				componentsEndpoint,
 				nil,
 			)
 		})
@@ -183,7 +186,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPost,
-				"/components",
+				componentsEndpoint,
 				api.Component{
 					DisplayName: test.Ptr("Storage"),
 				},
@@ -219,7 +222,7 @@ var _ = Describe("Component", Ordered, func() {
 		Context("with empty request", func() {
 			It("should return 400 bad request", func() {
 				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, "/components", nil)
+				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, componentsEndpoint, nil)
 
 				// Act
 				err := handlers.CreateComponent(ctx)
@@ -258,7 +261,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodDelete,
-				fmt.Sprintf("/components/%s", componentID),
+				componentEndpoint,
 				nil,
 			)
 		})
@@ -342,7 +345,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				fmt.Sprintf("/components/%s", componentID),
+				componentEndpoint,
 				nil,
 			)
 		})
@@ -352,7 +355,7 @@ var _ = Describe("Component", Ordered, func() {
 				// Arrange
 				sqlMock.
 					ExpectQuery(expectedComponentQuery).
-					WithArgs(componentID).
+					WithArgs(componentID, 1).
 					WillReturnRows(
 						componentRows.AddRow(component.ID, component.DisplayName, component.Labels),
 					)
@@ -434,7 +437,7 @@ var _ = Describe("Component", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPatch,
-				fmt.Sprintf("/components/%s", componentID),
+				componentEndpoint,
 				api.Component{
 					DisplayName: test.Ptr("Network"),
 				},
@@ -467,7 +470,7 @@ var _ = Describe("Component", Ordered, func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/components/%s", componentID),
+					componentEndpoint,
 					nil,
 				)
 
@@ -486,7 +489,7 @@ var _ = Describe("Component", Ordered, func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					fmt.Sprintf("/components/%s", "ABC-123"),
+					"/components/ABC-123",
 					api.Component{
 						DisplayName: test.Ptr("Network"),
 					},

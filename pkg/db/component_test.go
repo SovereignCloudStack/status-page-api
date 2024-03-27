@@ -11,9 +11,10 @@ import (
 
 var _ = Describe("Component", func() {
 	const (
-		componentID  = "7fecf595-6352-4906-a0d8-b3243ee62ec8"
-		incidentID   = "91fd8fa3-4288-4940-bcfb-9e89d82f3522"
-		impactTypeID = "c3fc130d-e6c4-4f94-86ba-e51fbdfc5d0c"
+		componentID    = "7fecf595-6352-4906-a0d8-b3243ee62ec8"
+		incidentID     = "91fd8fa3-4288-4940-bcfb-9e89d82f3522"
+		impactTypeID   = "c3fc130d-e6c4-4f94-86ba-e51fbdfc5d0c"
+		impactSeverity = 50
 	)
 
 	var (
@@ -31,6 +32,7 @@ var _ = Describe("Component", func() {
 					IncidentID:   &incidentUUID,
 					ComponentID:  &componentUUID,
 					ImpactTypeID: &impactTypeUUID,
+					Severity:     test.Ptr(impactSeverity),
 				},
 			},
 		}
@@ -45,6 +47,7 @@ var _ = Describe("Component", func() {
 						{
 							Reference: test.Ptr(incidentID),
 							Type:      test.Ptr(impactTypeID),
+							Severity:  test.Ptr(impactSeverity),
 						},
 					},
 					DisplayName: test.Ptr("Storage"),
@@ -69,6 +72,7 @@ var _ = Describe("Component", func() {
 					{
 						Reference: test.Ptr(incidentID),
 						Type:      test.Ptr(impactTypeID),
+						Severity:  test.Ptr(impactSeverity),
 					},
 				}
 

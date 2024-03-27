@@ -50,7 +50,7 @@ func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 
 	resources := ProvisionedResources{} //nolint:exhaustruct
 
-	err = yaml.NewDecoder(file).Decode(&resources)
+	err = yaml.NewDecoder(file).Decode(&resources) //nolint:musttag // musstag has a false positive for ignored fields.
 	if err != nil {
 		return fmt.Errorf("error decoding provisioning file `%s`: %w", filename, err)
 	}
@@ -89,7 +89,7 @@ func Provision(filename string, dbCon *gorm.DB) error { //nolint:funlen,cyclop
 		}
 
 		for phaseIndex := range resources.Phases {
-			order := phaseIndex
+			order := phaseIndex //nolint:copyloopvar
 
 			resources.Phases[phaseIndex].Order = &order
 			resources.Phases[phaseIndex].Generation = &initialPhaseGeneration

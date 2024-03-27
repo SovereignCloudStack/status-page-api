@@ -31,6 +31,7 @@ func (c *Component) GetImpactIncidentList() *api.ImpactIncidentList {
 		typeID := impact.ImpactTypeID.String()
 		impacts[impactIndex].Reference = &incidentID
 		impacts[impactIndex].Type = &typeID
+		impacts[impactIndex].Severity = impact.Severity
 	}
 
 	return &impacts

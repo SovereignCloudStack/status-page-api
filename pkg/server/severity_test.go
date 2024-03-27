@@ -13,7 +13,6 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -21,53 +20,41 @@ import (
 	"gorm.io/gorm"
 )
 
-var _ = Describe("Impact", Ordered, func() {
-	const (
-		impactTypeID        = "c3fc130d-e6c4-4f94-86ba-e51fbdfc5d0c"
-		impactTypesEndpoint = "/impactTypes"
-		impactTypeEndpoint  = impactTypesEndpoint + "/" + impactTypeID
-	)
-
+var _ = Describe("Severity", func() {
 	var (
 		// sub loggers
-		echoLogger    *zerolog.Logger
-		gormLogger    *zerolog.Logger
-		handlerLogger *zerolog.Logger
+		echoLogger, gormLogger, handlerLogger = test.MustSetupLogging(zerolog.TraceLevel)
 
 		// sql mocking
 		sqlDB   *sql.DB
 		sqlMock sqlmock.Sqlmock
 
 		// mocked sql rows
-		impactTypeRows *sqlmock.Rows
+		severityRows *sqlmock.Rows
 
 		// actual functions under test
 		handlers *server.Implementation
 
 		// expected SQL
-		expectedImpactTypesQuery = regexp.QuoteMeta(`SELECT * FROM "impact_types"`)
-		expectedImpactTypeQuery  = regexp.QuoteMeta(`SELECT * FROM "impact_types" WHERE id = $1 ORDER BY "impact_types"."id" LIMIT $2`) //nolint:lll
-		expectedImpactTypeInsert = regexp.QuoteMeta(`INSERT INTO "impact_types" ("id","display_name","description") VALUES ($1,$2,$3)`) //nolint:lll
-		expectedImpactTypeDelete = regexp.QuoteMeta(`DELETE FROM "impact_types" WHERE id = $1`)
-		expectedImpactTypeUpdate = regexp.QuoteMeta(`UPDATE "impact_types" SET "display_name"=$1 WHERE "id" = $2`)
+		expectedSeveritiesQuery = regexp.
+					QuoteMeta(`SELECT * FROM "severities"`)
+		expectedSeverityQuery = regexp.
+					QuoteMeta(`SELECT * FROM "severities" WHERE display_name = $1 ORDER BY "severities"."display_name" LIMIT $2`)
+		expectedSeverityInsert = regexp.
+					QuoteMeta(`INSERT INTO "severities" ("display_name","value") VALUES ($1,$2)`)
+		expectedSeverityDelete = regexp.
+					QuoteMeta(`DELETE FROM "severities" WHERE display_name = $1`)
+		expectedSeverityUpdate = regexp.
+					QuoteMeta(`UPDATE "severities" SET "display_name"=$1 WHERE display_name = $2`)
 
-		// UUID of the test impact type
-		impactTypeUUID = uuid.MustParse(impactTypeID)
-
-		// filled test impact type
-		impactType = db.ImpactType{
-			Model: db.Model{
-				ID: &impactTypeUUID,
-			},
-			DisplayName: test.Ptr("Performance degration"),
-			Description: test.Ptr("Performance has been decreased in some parts of the system."),
+		// filled test severity
+		severity = db.Severity{
+			DisplayName: test.Ptr("broken"),
+			Value:       test.Ptr(50),
 		}
-	)
 
-	BeforeAll(func() {
-		// setup loggers once
-		echoLogger, gormLogger, handlerLogger = test.MustSetupLogging(zerolog.TraceLevel)
-	})
+		severityEndpoint = "/severities/" + *severity.DisplayName
+	)
 
 	BeforeEach(func() {
 		// setup database and mock before each test
@@ -77,8 +64,8 @@ var _ = Describe("Impact", Ordered, func() {
 		handlers = server.New(gormDB, handlerLogger)
 
 		// create mock rows before each test
-		impactTypeRows = sqlmock.
-			NewRows([]string{"id", "display_name", "description"})
+		severityRows = sqlmock.
+			NewRows([]string{"display_name", "value"})
 	})
 
 	AfterEach(func() {
@@ -87,7 +74,7 @@ var _ = Describe("Impact", Ordered, func() {
 		sqlDB.Close()
 	})
 
-	Describe("GetImpactTypes", func() {
+	Describe("GetSeverities", func() {
 		var (
 			ctx echo.Context
 			res *httptest.ResponseRecorder
@@ -98,22 +85,23 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				impactTypesEndpoint,
+				"/severities",
 				nil,
 			)
 		})
 
 		Context("without data", func() {
-			It("should return an empty list of impact types", func() {
+			It("should return an empty list of severities", func() {
 				// Arrange
-				sqlMock.ExpectQuery(expectedImpactTypesQuery).WillReturnRows(impactTypeRows)
+				sqlMock.
+					ExpectQuery(expectedSeveritiesQuery).
+					WillReturnRows(severityRows)
 
-				expectedResult, _ := json.Marshal(api.ImpactTypeListResponse{
-					Data: []api.ImpactTypeResponseData{},
+				expectedResult, _ := json.Marshal(api.SeverityListResponse{
+					Data: []api.Severity{},
 				})
-
 				// Act
-				err := handlers.GetImpactTypes(ctx)
+				err := handlers.GetSeverities(ctx)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -123,22 +111,22 @@ var _ = Describe("Impact", Ordered, func() {
 		})
 
 		Context("with valid data", func() {
-			It("should return a list of impactTypes", func() {
+			It("should return a list of severities", func() {
 				// Arrange
 				sqlMock.
-					ExpectQuery(expectedImpactTypesQuery).
+					ExpectQuery(expectedSeveritiesQuery).
 					WillReturnRows(
-						impactTypeRows.AddRow(impactType.ID, impactType.DisplayName, impactType.Description),
+						severityRows.AddRow(severity.DisplayName, severity.Value),
 					)
 
-				expectedResult, _ := json.Marshal(api.ImpactTypeListResponse{
-					Data: []api.ImpactTypeResponseData{
-						impactType.ToAPIResponse(),
+				expectedResult, _ := json.Marshal(api.SeverityListResponse{
+					Data: []api.Severity{
+						severity.ToAPIResponse(),
 					},
 				})
 
 				// Act
-				err := handlers.GetImpactTypes(ctx)
+				err := handlers.GetSeverities(ctx)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -150,10 +138,12 @@ var _ = Describe("Impact", Ordered, func() {
 		Context("with database error", func() {
 			It("should return 500 internal server error", func() {
 				// Arrange
-				sqlMock.ExpectQuery(expectedImpactTypesQuery).WillReturnError(test.ErrTestError)
+				sqlMock.
+					ExpectQuery(expectedSeveritiesQuery).
+					WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetImpactTypes(ctx)
+				err := handlers.GetSeverities(ctx)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -162,7 +152,7 @@ var _ = Describe("Impact", Ordered, func() {
 		})
 	})
 
-	Describe("CreateImpactType", func() {
+	Describe("CreateSeverity", func() {
 		var (
 			ctx echo.Context
 			res *httptest.ResponseRecorder
@@ -173,46 +163,37 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPost,
-				impactTypesEndpoint,
-				api.ImpactType{
-					DisplayName: test.Ptr("Performance degration"),
+				"/severities",
+				api.Severity{
+					DisplayName: test.Ptr("broken"),
+					Value:       test.Ptr(50),
 				},
 			)
 		})
 
 		Context("with valid request", func() {
-			It("should create an impact type and return its UUID", func() {
+			It("should create a severity", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
-				sqlMock.ExpectExec(expectedImpactTypeInsert).WillReturnResult(sqlmock.NewResult(0, 1))
+				sqlMock.ExpectExec(expectedSeverityInsert).WillReturnResult(sqlmock.NewResult(0, 1))
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.CreateImpactType(ctx)
+				err := handlers.CreateSeverity(ctx)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
-
-				// parse answer to get uuid
-				var response api.IdResponse
-				err = json.Unmarshal(res.Body.Bytes(), &response)
-
-				Ω(err).ShouldNot(HaveOccurred())
-
-				// check valid uuid
-				_, err = uuid.Parse(response.Id)
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(res.Code).Should(Equal(http.StatusCreated))
+				Ω(res.Code).Should(Equal(http.StatusNoContent))
 			})
 		})
 
 		Context("with empty request", func() {
 			It("should return 400 bad request", func() {
 				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, impactTypesEndpoint, nil)
+				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, "/severities", nil)
 
 				// Act
-				err := handlers.CreateImpactType(ctx)
+				err := handlers.CreateSeverity(ctx)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -224,11 +205,11 @@ var _ = Describe("Impact", Ordered, func() {
 			It("should return 500 internal server error", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
-				sqlMock.ExpectExec(expectedImpactTypeInsert).WillReturnError(test.ErrTestError)
+				sqlMock.ExpectExec(expectedSeverityInsert).WillReturnError(test.ErrTestError)
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.CreateImpactType(ctx)
+				err := handlers.CreateSeverity(ctx)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -237,7 +218,7 @@ var _ = Describe("Impact", Ordered, func() {
 		})
 	})
 
-	Describe("DeleteImpactType", func() {
+	Describe("DeleteSeverity", func() {
 		var (
 			ctx echo.Context
 			res *httptest.ResponseRecorder
@@ -248,20 +229,23 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodDelete,
-				impactTypeEndpoint,
+				severityEndpoint,
 				nil,
 			)
 		})
 
-		Context("with valid UUID and an affected row", func() {
+		Context("with affected row", func() {
 			It("should return 204 no content", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
-				sqlMock.ExpectExec(expectedImpactTypeDelete).WithArgs(impactTypeID).WillReturnResult(sqlmock.NewResult(0, 1))
+				sqlMock.
+					ExpectExec(expectedSeverityDelete).
+					WithArgs(severity.DisplayName).
+					WillReturnResult(sqlmock.NewResult(0, 1))
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteImpactType(ctx, impactTypeID)
+				err := handlers.DeleteSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -274,11 +258,14 @@ var _ = Describe("Impact", Ordered, func() {
 			It("should return 404 not found", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
-				sqlMock.ExpectExec(expectedImpactTypeDelete).WithArgs(impactTypeID).WillReturnResult(sqlmock.NewResult(0, 0))
+				sqlMock.
+					ExpectExec(expectedSeverityDelete).
+					WithArgs(severity.DisplayName).
+					WillReturnResult(sqlmock.NewResult(0, 0))
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteImpactType(ctx, impactTypeID)
+				err := handlers.DeleteSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -290,38 +277,23 @@ var _ = Describe("Impact", Ordered, func() {
 			It("should return 500 internal server error", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
-				sqlMock.ExpectExec(expectedImpactTypeDelete).WithArgs(impactTypeID).WillReturnError(test.ErrTestError)
+				sqlMock.
+					ExpectExec(expectedSeverityDelete).
+					WithArgs(severity.DisplayName).
+					WillReturnError(test.ErrTestError)
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.DeleteImpactType(ctx, impactTypeID)
+				err := handlers.DeleteSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
 			})
 		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodDelete,
-					"/impactTypes/ABC-123",
-					nil,
-				)
-				// Act
-				err := handlers.DeleteImpactType(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
 	})
 
-	Describe("GetImpactType", func() {
+	Describe("GetSeverity", func() {
 		var (
 			ctx echo.Context
 			res *httptest.ResponseRecorder
@@ -332,27 +304,27 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodGet,
-				impactTypeEndpoint,
+				severityEndpoint,
 				nil,
 			)
 		})
 
-		Context("with valid UUID and valid data", func() {
-			It("should return a single impactType", func() {
+		Context("with valid data", func() {
+			It("should return a single severity", func() {
 				// Arrange
 				sqlMock.
-					ExpectQuery(expectedImpactTypeQuery).
-					WithArgs(impactTypeID, 1).
+					ExpectQuery(expectedSeverityQuery).
+					WithArgs(severity.DisplayName, 1).
 					WillReturnRows(
-						impactTypeRows.AddRow(impactType.ID, impactType.DisplayName, impactType.Description),
+						severityRows.AddRow(severity.DisplayName, severity.Value),
 					)
 
-				expectedResult, _ := json.Marshal(api.ImpactTypeResponse{
-					Data: impactType.ToAPIResponse(),
+				expectedResult, _ := json.Marshal(api.SeverityResponse{
+					Data: severity.ToAPIResponse(),
 				})
 
 				// Act
-				err := handlers.GetImpactType(ctx, impactTypeID)
+				err := handlers.GetSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -364,10 +336,10 @@ var _ = Describe("Impact", Ordered, func() {
 		Context("with database error", func() {
 			It("should return 500 internal server error", func() {
 				// Arrange
-				sqlMock.ExpectQuery(expectedImpactTypeQuery).WillReturnError(test.ErrTestError)
+				sqlMock.ExpectQuery(expectedSeverityQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetImpactType(ctx, impactTypeID)
+				err := handlers.GetSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -375,32 +347,13 @@ var _ = Describe("Impact", Ordered, func() {
 			})
 		})
 
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodGet,
-					"/impactTypes/ABC-123",
-					nil,
-				)
-
-				// Act
-				err := handlers.GetImpactType(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
-
 		Context("without data", func() {
 			It("should return 404 not found", func() {
 				// Arrange
-				sqlMock.ExpectQuery(expectedImpactTypeQuery).WillReturnRows(impactTypeRows)
+				sqlMock.ExpectQuery(expectedSeverityQuery).WillReturnRows(severityRows)
 
 				// Act
-				err := handlers.GetImpactType(ctx, impactTypeID)
+				err := handlers.GetSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -409,7 +362,7 @@ var _ = Describe("Impact", Ordered, func() {
 		})
 	})
 
-	Describe("UpdateImpactType", func() {
+	Describe("UpdateSeverity", func() {
 		var (
 			ctx echo.Context
 			res *httptest.ResponseRecorder
@@ -420,25 +373,25 @@ var _ = Describe("Impact", Ordered, func() {
 			ctx, res = test.MustCreateEchoContextAndResponseWriter(
 				echoLogger,
 				http.MethodPatch,
-				impactTypeEndpoint,
-				api.ImpactType{
-					DisplayName: test.Ptr("Connectivity problems"),
+				severityEndpoint,
+				api.Severity{
+					DisplayName: test.Ptr("impacted"),
 				},
 			)
 		})
 
-		Context("with valid UUID and valid request", func() {
+		Context("with valid request", func() {
 			It("should return 204 no conntent", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
 				sqlMock.
-					ExpectExec(expectedImpactTypeUpdate).
-					WithArgs("Connectivity problems", impactTypeID).
+					ExpectExec(expectedSeverityUpdate).
+					WithArgs("impacted", severity.DisplayName).
 					WillReturnResult(sqlmock.NewResult(0, 1))
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateImpactType(ctx, impactTypeID)
+				err := handlers.UpdateSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -453,33 +406,12 @@ var _ = Describe("Impact", Ordered, func() {
 				ctx, res = test.MustCreateEchoContextAndResponseWriter(
 					echoLogger,
 					http.MethodPatch,
-					impactTypeEndpoint,
+					severityEndpoint,
 					nil,
 				)
 
 				// Act
-				err := handlers.UpdateImpactType(ctx, impactTypeID)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodPatch,
-					"/impactTypes/ABC-123",
-					api.ImpactType{
-						DisplayName: test.Ptr("Connectivity problems"),
-					},
-				)
-
-				// Act
-				err := handlers.UpdateImpactType(ctx, "ABC-123")
+				err := handlers.UpdateSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -492,13 +424,13 @@ var _ = Describe("Impact", Ordered, func() {
 				// Arrange
 				sqlMock.ExpectBegin()
 				sqlMock.
-					ExpectExec(expectedImpactTypeUpdate).
-					WithArgs("Connectivity problems", impactTypeID).
+					ExpectExec(expectedSeverityUpdate).
+					WithArgs("impacted", severity.DisplayName).
 					WillReturnError(test.ErrTestError)
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.UpdateImpactType(ctx, impactTypeID)
+				err := handlers.UpdateSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -511,13 +443,13 @@ var _ = Describe("Impact", Ordered, func() {
 				// Arrange
 				sqlMock.ExpectBegin()
 				sqlMock.
-					ExpectExec(expectedImpactTypeUpdate).
-					WithArgs("Connectivity problems", impactTypeID).
+					ExpectExec(expectedSeverityUpdate).
+					WithArgs("impacted", severity.DisplayName).
 					WillReturnResult(sqlmock.NewResult(0, 0))
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateImpactType(ctx, impactTypeID)
+				err := handlers.UpdateSeverity(ctx, *severity.DisplayName)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())

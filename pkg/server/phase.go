@@ -122,8 +122,8 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error { //nolint:funl
 		phases := make([]DbDef.Phase, len(request.Phases))
 
 		for phaseIndex, phase := range request.Phases {
-			order := phaseIndex
-			name := phase
+			order := phaseIndex //nolint:copyloopvar
+			name := phase       //nolint:copyloopvar
 
 			phases[phaseIndex] = DbDef.Phase{
 				Generation: &generation,

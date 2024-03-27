@@ -87,6 +87,7 @@ func main() { //nolint:funlen
 		&DbDef.Incident{},       //nolint:exhaustruct
 		&DbDef.ImpactType{},     //nolint:exhaustruct
 		&DbDef.Impact{},         //nolint:exhaustruct
+		&DbDef.Severity{},       //nolint:exhaustruct
 	)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error migrating structures")

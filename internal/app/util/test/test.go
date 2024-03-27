@@ -39,7 +39,7 @@ func MustSetupLogging(loglevel zerolog.Level) (*zerolog.Logger, *zerolog.Logger,
 
 // MustMockGorm creates SQL mock and connects gorm to the mock.
 // Fails matching in tests, when an error occures.
-func MustMockGorm(gormLogger *zerolog.Logger) (*sql.DB, sqlmock.Sqlmock, *gorm.DB) { //nolint:ireturn
+func MustMockGorm(gormLogger *zerolog.Logger) (*sql.DB, sqlmock.Sqlmock, *gorm.DB) { //nolint:ireturn,nolintlint
 	// mock sql connection
 	sqlDB, sqlMock, err := sqlmock.New()
 	Ω(err).ShouldNot(HaveOccurred())
@@ -84,7 +84,7 @@ func MustCreateRequestAndResponseWriter(
 }
 
 // MustCreateEchoContext creates an echo context with the given logger and request and response writer.
-func MustCreateEchoContext( //nolint: ireturn
+func MustCreateEchoContext( //nolint:ireturn,nolintlint
 	echoLogger *zerolog.Logger,
 	request *http.Request,
 	responseWriter http.ResponseWriter,
@@ -98,7 +98,7 @@ func MustCreateEchoContext( //nolint: ireturn
 
 // MustCreateEchoContextAndResponseWriter is a convenience function combining [MustCreateEchoContext]
 // and [MustCreateRequestAndResponseWriter] when access to the request is not needed.
-func MustCreateEchoContextAndResponseWriter( //nolint:ireturn
+func MustCreateEchoContextAndResponseWriter( //nolint:ireturn,nolintlint
 	echoLogger *zerolog.Logger,
 	method string,
 	target string,
