@@ -85,51 +85,7 @@ var _ = Describe("Impact", func() {
 		incidentID  = "91fd8fa3-4288-4940-bcfb-9e89d82f3522"
 	)
 
-	var (
-		componentUUID = uuid.MustParse(componentID)
-		incidentUUID  = uuid.MustParse(incidentID)
-	)
-
-	Describe("ActivelyAffectedByFromImpactIncidentList", func() {
-		Context("with valid data", func() {
-			It("should return a impact list", func() {
-				// Arrange
-				incidentImpacts := &api.ImpactIncidentList{
-					{
-						Reference: test.Ptr(incidentID),
-						Type:      test.Ptr(impactTypeID),
-					},
-				}
-
-				expectedResult := &[]db.Impact{
-					{
-						IncidentID:   &incidentUUID,
-						ImpactTypeID: &impactTypeUUID,
-					},
-				}
-
-				// Act
-				res, err := db.ActivelyAffectedByFromImpactIncidentList(incidentImpacts)
-
-				// Assert
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(res).Should(Equal(expectedResult))
-			})
-		})
-
-		Context("with no data", func() {
-			It("should return an ErrEmptyValue", func() {
-				// Arrange
-				// Act
-				res, err := db.ActivelyAffectedByFromImpactIncidentList(nil)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(db.ErrEmptyValue))
-				Ω(res).Should(BeNil())
-			})
-		})
-	})
+	componentUUID := uuid.MustParse(componentID)
 
 	Describe("AffectsFromImpactComponentList", func() {
 		Context("with valid data", func() {

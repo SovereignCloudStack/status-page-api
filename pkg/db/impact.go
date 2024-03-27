@@ -46,32 +46,6 @@ type Impact struct {
 	ImpactTypeID *ID `gorm:"primaryKey"`
 }
 
-// ActivelyAffectedByFromImpactIncidentList parses a [api.ImpactIncidentList] to an [Impact] list.
-func ActivelyAffectedByFromImpactIncidentList(incidentImpacts *api.ImpactIncidentList) (*[]Impact, error) {
-	if incidentImpacts == nil {
-		return nil, ErrEmptyValue
-	}
-
-	impacts := make([]Impact, len(*incidentImpacts))
-
-	for impactIndex, impact := range *incidentImpacts {
-		incidentID, err := uuid.Parse(*impact.Reference)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing incident id: %w", err)
-		}
-
-		impactTypeID, err := uuid.Parse(*impact.Type)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing impact type id: %w", err)
-		}
-
-		impacts[impactIndex].IncidentID = &incidentID
-		impacts[impactIndex].ImpactTypeID = &impactTypeID
-	}
-
-	return &impacts, nil
-}
-
 // AffectsFromImpactComponentList parses a [api.ImpactComponentList] to an [Impact] list.
 func AffectsFromImpactComponentList(componentImpacts *api.ImpactComponentList) (*[]Impact, error) {
 	if componentImpacts == nil {
