@@ -101,6 +101,7 @@ func Provision(filename string, dbCon *gorm.DB, logger *zerolog.Logger) error {
 		Components  []Component  `yaml:"components"`
 		ImpactTypes []ImpactType `yaml:"impactTypes"`
 		Phases      []Phase      `yaml:"phases"`
+		Severities  []Severity   `yaml:"severities"`
 	}
 
 	logger.Debug().Str("provisioningFile", filename).Msg("opening provisioning file")
@@ -137,6 +138,11 @@ func Provision(filename string, dbCon *gorm.DB, logger *zerolog.Logger) error {
 		txErr = provisionPhases(resources.Phases, dbTx, logger)
 		if txErr != nil {
 			return fmt.Errorf("error provisioning phases: %w", err)
+		}
+
+		txErr = provision(resources.Severities, dbTx, logger)
+		if txErr != nil {
+			return fmt.Errorf("error provisioning severities: %w", err)
 		}
 
 		return nil

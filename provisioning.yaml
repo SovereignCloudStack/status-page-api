@@ -40,3 +40,13 @@ phases:
 - name: Working on it
 - name: Potential fix deployed
 - name: Done
+
+severities:
+- name: operational
+  value: 25
+- name: maintenance
+  value: 50
+- name: limited
+  value: 75
+- name: broken
+  value: 100

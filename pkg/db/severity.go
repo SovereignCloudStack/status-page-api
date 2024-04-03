@@ -4,8 +4,8 @@ import "github.com/SovereignCloudStack/status-page-openapi/pkg/api"
 
 // Severity represents a severity of a incident affecting a component.
 type Severity struct {
-	DisplayName *api.DisplayName
-	Value       *api.SeverityValue `grom:"type:smallint"`
+	DisplayName *api.DisplayName   `yaml:"name"`
+	Value       *api.SeverityValue `grom:"type:smallint" yaml:"value"`
 }
 
 // ToAPIResponse converts to API response.
