@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.21.4-alpine3.18 as builder
+FROM docker.io/golang:1.22.1-alpine3.19 as builder
 
 RUN apk upgrade --no-cache
 
@@ -8,7 +8,7 @@ COPY . .
 
 RUN go build -o status-page-api main.go
 
-FROM docker.io/alpine:3.18
+FROM docker.io/alpine:3.19
 
 RUN apk upgrade --no-cache
 
