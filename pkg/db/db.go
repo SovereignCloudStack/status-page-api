@@ -42,8 +42,8 @@ func provision[S ~[]E, E any](data S, dbTx *gorm.DB, logger *zerolog.Logger) err
 		target = make(S, limit)
 	)
 
-	typ := reflect.TypeOf(data).Elem()
-	provisioningLogger := logger.With().Str("function", "provision").Str("type", typ.Name()).Logger()
+	reflectType := reflect.TypeOf(data).Elem()
+	provisioningLogger := logger.With().Str("function", "provision").Str("type", reflectType.Name()).Logger()
 
 	// get from database if exist.
 	res := dbTx.
@@ -51,7 +51,7 @@ func provision[S ~[]E, E any](data S, dbTx *gorm.DB, logger *zerolog.Logger) err
 		Find(&target)
 	if res.Error != nil {
 		if !errors.Is(res.Error, gorm.ErrRecordNotFound) {
-			return fmt.Errorf("error getting %ss: %w", typ.Name(), res.Error)
+			return fmt.Errorf("error getting %s: %w", reflectType.Name(), res.Error)
 		}
 	}
 

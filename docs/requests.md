@@ -8,7 +8,7 @@ Please refer to [example requests](example-requests.md) to see these request in 
 
 Phases are always handled as lists, so `GET` as well as `POST` operations on phases always require the full list. When geting the phase list, it's accompanied be a generation annotation.
 
-```json
+```json5
 {
   "generation": 1, // omitted on POST and PATCH
   "phases": [
@@ -23,7 +23,7 @@ Phases are always handled as lists, so `GET` as well as `POST` operations on pha
 
 Requesting (`GET`) an impact type, will return all fields, while `POST` and `PATCH` operations ommit the `id` field.
 
-```json
+```json5
 {
   "id": "UUID", // ommit on POST and PATCH
   "description": "Desription of the impact type.",
@@ -48,7 +48,7 @@ As `displayName` is the identifier it must be unique, even when modified by `PAT
 
 When `GET`ing a component, all fields can be expected to be filled, while requests for `POST` (creation) and `PATCH` operations only handle certain fields.
 
-```json
+```json5
 {
   "id": "UUID", // ommited on POST and PATCH
   "activelyAffectedBy": [ // ommited on POST and PATCH
@@ -69,7 +69,7 @@ When `GET`ing a component, all fields can be expected to be filled, while reques
 
 It is expected that incidents are the most used API object and have the most data to transmit.
 
-```json
+```json5
 {
   "id": "UUID", // ommited on POST and PATCH
   "affects": [
@@ -103,7 +103,7 @@ When performing `POST` or `PATCH` operations on incidents the `affects` field is
 
 Whenever an incident changes, an update should be issued. When doing a `GET` request, the `order` field is filled, updates should be displayed in ascending order.
 
-```json
+```json5
 {
   "order": 0, // ommited on POST and PATCH
   "createdAt": "2024-01-01T06:15:00.000Z",
