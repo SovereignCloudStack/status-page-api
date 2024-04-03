@@ -52,6 +52,7 @@ func main() { //nolint:funlen
 	echoLogger := logger.With().Str("component", "echo").Logger()
 	gormLogger := logger.With().Str("component", "gorm").Logger()
 	handlerLogger := logger.With().Str("component", "handler").Logger()
+	provisioningLogger := logger.With().Str("component", "provisioning").Logger()
 
 	// HTTP setup
 	echoServer := echo.New()
@@ -94,7 +95,7 @@ func main() { //nolint:funlen
 	}
 
 	// Initialize "static" DB contents
-	err = DbDef.Provision(conf.ProvisioningFile, dbCon)
+	err = DbDef.Provision(conf.ProvisioningFile, dbCon, &provisioningLogger)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error provisioning data")
 	}
