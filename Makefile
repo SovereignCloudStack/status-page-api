@@ -1,5 +1,6 @@
 APP_NAME=status-page-api
 BIN_DIR=bin
+CMD_DIR=cmd
 DOC_DIR=docs
 HASH=$(shell git rev-parse --short HEAD)
 CONTAINER_RUNTIME?=docker
@@ -40,7 +41,7 @@ $(BIN_DIR):
 	@mkdir -p $@
 
 go-build: $(BIN_DIR)
-	go build -o $(BIN_DIR)/$(APP_NAME) main.go
+	go build -o $(BIN_DIR)/$(APP_NAME) $(CMD_DIR)/$(APP_NAME)/main.go
 
 ${DOC_DIR}:
 	mkdir -p ${DOC_DIR}
