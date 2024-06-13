@@ -7,9 +7,11 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/config"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/logging"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/swagger"
+	"github.com/SovereignCloudStack/status-page-api/internal/metrics"
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
 	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/rs/zerolog"
@@ -53,6 +55,13 @@ func main() { //nolint:funlen
 	gormLogger := logger.With().Str("component", "gorm").Logger()
 	handlerLogger := logger.With().Str("component", "handler").Logger()
 	provisioningLogger := logger.With().Str("component", "provisioning").Logger()
+	metricsLogger := logger.With().Str("component", "metrics").Logger()
+
+	// metric server
+	metricsServer := metrics.New(&conf.Metrics, &metricsLogger)
+	go func() {
+		logger.Fatal().Err(metricsServer.Start()).Msg("error running metrics server")
+	}()
 
 	// HTTP setup
 	echoServer := echo.New()
@@ -65,6 +74,7 @@ func main() { //nolint:funlen
 	echoServer.Use(middleware.CORSWithConfig(middleware.CORSConfig{ //nolint:exhaustruct
 		AllowOrigins: conf.AllowedOrigins,
 	}))
+	echoServer.Use(echoprometheus.NewMiddlewareWithConfig(metricsServer.GetMiddlewareConfig()))
 
 	// open api spec and swagger
 	echoServer.GET("/openapi.json", swagger.ServeOpenAPISpec)

@@ -21,10 +21,18 @@ func (db Database) isValid() error {
 	return nil
 }
 
+// Metrics holds configuration regarding the metrics server.
+type Metrics struct {
+	Namespace string
+	Subsystem string
+	Address   string
+}
+
 // Config holds all application configuration.
 type Config struct {
 	ProvisioningFile string
 	ListenAddress    string
+	Metrics          Metrics
 	Database         Database
 	AllowedOrigins   []string
 	Verbose          int
@@ -64,6 +72,13 @@ const (
 	databaseConnectionString        = "database.connection-string"
 	databaseConnectionStringDefault = ""
 
+	metricsNamespace        = "metrics.namespace"
+	metricsNamespaceDefault = "status_page"
+	metricsSubsystem        = "metrics.subsystem"
+	metricsSubsystemDefault = "api"
+	metricsAddress          = "metrics.address"
+	metricsAddressDefault   = ""
+
 	listenAddress        = "listen-address"
 	listenAddressDefault = ":3000"
 	allowedOrigins       = "allowed-origins"
@@ -81,6 +96,10 @@ func setDefaults() {
 
 	viper.SetDefault(databaseConnectionString, databaseConnectionStringDefault)
 
+	viper.SetDefault(metricsNamespace, metricsNamespaceDefault)
+	viper.SetDefault(metricsSubsystem, metricsSubsystemDefault)
+	viper.SetDefault(metricsAddress, metricsAddressDefault)
+
 	viper.SetDefault(listenAddress, listenAddressDefault)
 	viper.SetDefault(allowedOrigins, allowedOriginsDefault)
 
@@ -93,6 +112,10 @@ func setFlags() {
 	pflag.Bool(swaggerUIEnabled, swaggerUIEnabledDefault, "Enable swagger UI for development.")
 
 	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string")
+
+	pflag.String(metricsNamespace, metricsNamespace, "Metrics namespace")
+	pflag.String(metricsSubsystem, metricsSubsystem, "Metrics sub system name")
+	pflag.String(metricsAddress, metricsAddressDefault, "Metrics server listen address")
 
 	pflag.String(listenAddress, listenAddressDefault, "Server listen address")
 	pflag.StringArray(allowedOrigins, allowedOriginsDefault, "Server CORS origins to accept")
@@ -110,7 +133,12 @@ func buildConfig() *Config {
 		Database: Database{
 			ConnectionString: strings.TrimSpace(viper.GetString(databaseConnectionString)),
 		},
-		ListenAddress:    strings.TrimSpace(viper.GetString(listenAddress)),
+		ListenAddress: strings.TrimSpace(viper.GetString(listenAddress)),
+		Metrics: Metrics{
+			Namespace: strings.TrimSpace(viper.GetString(metricsNamespace)),
+			Subsystem: strings.TrimSpace(viper.GetString(metricsSubsystem)),
+			Address:   strings.TrimSpace(viper.GetString(metricsAddress)),
+		},
 		ProvisioningFile: strings.TrimSpace(viper.GetString(provisioningFile)),
 		SwaggerEnabled:   viper.GetBool(swaggerUIEnabled),
 		Verbose:          viper.GetInt(verbose),
