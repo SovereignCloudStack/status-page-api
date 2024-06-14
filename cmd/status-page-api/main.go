@@ -1,26 +1,26 @@
 package main
 
 import (
+	"context"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/SovereignCloudStack/status-page-api/internal/app/config"
-	"github.com/SovereignCloudStack/status-page-api/internal/app/logging"
-	"github.com/SovereignCloudStack/status-page-api/internal/app/swagger"
+	"github.com/SovereignCloudStack/status-page-api/internal/app/db"
+	APIServer "github.com/SovereignCloudStack/status-page-api/internal/app/server"
 	"github.com/SovereignCloudStack/status-page-api/internal/metrics"
-	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-api/pkg/server"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
-	"github.com/labstack/echo-contrib/echoprometheus"
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
+	APIImplementation "github.com/SovereignCloudStack/status-page-api/pkg/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
 )
 
 func main() { //nolint:funlen
+	// signal handling
+	shutdownChan := make(chan os.Signal, 1)
+	signal.Notify(shutdownChan, syscall.SIGINT, syscall.SIGTERM)
+
 	// setup logging
 	logger := log.Output(zerolog.ConsoleWriter{ //nolint:exhaustruct
 		Out:        os.Stderr,
@@ -54,66 +54,58 @@ func main() { //nolint:funlen
 	echoLogger := logger.With().Str("component", "echo").Logger()
 	gormLogger := logger.With().Str("component", "gorm").Logger()
 	handlerLogger := logger.With().Str("component", "handler").Logger()
-	provisioningLogger := logger.With().Str("component", "provisioning").Logger()
 	metricsLogger := logger.With().Str("component", "metrics").Logger()
 
-	// metric server
-	metricsServer := metrics.New(&conf.Metrics, &metricsLogger)
-	go func() {
-		logger.Fatal().Err(metricsServer.Start()).Msg("error running metrics server")
-	}()
-
-	// HTTP setup
-	echoServer := echo.New()
-	echoServer.HideBanner = true
-	echoServer.HidePort = true
-
-	echoServer.Use(logging.NewEchoZerlogLogger(&echoLogger))
-	echoServer.Use(middleware.Recover())
-	echoServer.Use(middleware.RemoveTrailingSlash())
-	echoServer.Use(middleware.CORSWithConfig(middleware.CORSConfig{ //nolint:exhaustruct
-		AllowOrigins: conf.AllowedOrigins,
-	}))
-	echoServer.Use(echoprometheus.NewMiddlewareWithConfig(metricsServer.GetMiddlewareConfig()))
-
-	// open api spec and swagger
-	echoServer.GET("/openapi.json", swagger.ServeOpenAPISpec)
-
-	if conf.SwaggerEnabled {
-		echoServer.GET("/swagger", swagger.ServeSwagger)
-	}
-
 	// DB setup
-	dbCon, err := gorm.Open(postgres.Open(conf.Database.ConnectionString), &gorm.Config{ //nolint:exhaustruct
-		Logger: logging.NewGormLogger(&gormLogger),
-	})
+	dbWrapper, err := db.New(conf.Database.ConnectionString, &gormLogger)
 	if err != nil {
-		logger.Fatal().Err(err).Msg("error opening database connection")
-	}
-
-	err = dbCon.AutoMigrate(
-		&DbDef.Component{},      //nolint:exhaustruct
-		&DbDef.Phase{},          //nolint:exhaustruct
-		&DbDef.IncidentUpdate{}, //nolint:exhaustruct
-		&DbDef.Incident{},       //nolint:exhaustruct
-		&DbDef.ImpactType{},     //nolint:exhaustruct
-		&DbDef.Impact{},         //nolint:exhaustruct
-		&DbDef.Severity{},       //nolint:exhaustruct
-	)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("error migrating structures")
+		logger.Fatal().Err(err).Msg("error creating database wrapper")
 	}
 
 	// Initialize "static" DB contents
-	err = DbDef.Provision(conf.ProvisioningFile, dbCon, &provisioningLogger)
+	err = dbWrapper.Provision(conf.ProvisioningFile)
 	if err != nil {
 		logger.Fatal().Err(err).Msg("error provisioning data")
 	}
 
-	// register api
-	api.RegisterHandlers(echoServer, server.New(dbCon, &handlerLogger))
+	// set up metric server
+	metricsServer := metrics.New(&conf.Metrics, &metricsLogger)
 
-	// Starting server
-	logger.Log().Str("address", conf.ListenAddress).Msg("server start listening")
-	logger.Fatal().Err(echoServer.Start(conf.ListenAddress)).Msg("error running server")
+	// register api server
+	apiServer := APIServer.New(&conf.Server, &echoLogger, metricsServer.GetMiddlewareConfig())
+	apiServer.RegisterAPI(APIImplementation.New(dbWrapper.GetDBCon(), &handlerLogger))
+
+	// start metric server
+	go func() {
+		logger.Warn().Err(metricsServer.Start()).Msg("error running metrics server")
+	}()
+
+	// handle error of api server
+	errChan := make(chan error, 1)
+
+	// start api server
+	go func() {
+		err := apiServer.Start()
+		errChan <- err
+	}()
+
+	select {
+	case err := <-errChan:
+		logger.Warn().Err(err).Msg("error running server, shutting down")
+
+		ctx, cancel := context.WithTimeout(context.Background(), conf.ShutdownTimeout)
+
+		logger.Warn().Err(metricsServer.Shutdown(ctx)).Msg("error shutting down metrics server")
+
+		cancel()
+	case sig := <-shutdownChan:
+		logger.Log().Interface("signal", sig).Msg("got shutdown signal")
+
+		ctx, cancel := context.WithTimeout(context.Background(), conf.ShutdownTimeout)
+
+		logger.Warn().Err(metricsServer.Shutdown(ctx)).Msg("error shutting down metrics server")
+		logger.Warn().Err(apiServer.Shutdown(ctx)).Msg("error shutting down server")
+
+		cancel()
+	}
 }
