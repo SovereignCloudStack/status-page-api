@@ -8,8 +8,14 @@ var (
 
 	// ErrNoProvisioningFile is an error, raised when no provisioning file is configured.
 	ErrNoProvisioningFile = errors.New("no provisioning file")
-	// ErrNoListenAddress is an error, raised when no listen address is configured.
-	ErrNoListenAddress = errors.New("no listen address")
+
+	// ErrNoServerAddress is an error, raised when no server address is configured.
+	ErrNoServerAddress = errors.New("no server address")
 	// ErrNoAllowedOrigins is an error, raised when no allowed origins is configured.
 	ErrNoAllowedOrigins = errors.New("no allowed origins")
+
+	// ErrNoMetricNamespace is an error, raised when no metric namespace is configured.
+	ErrNoMetricNamespace = errors.New("no metrics namespace")
+	// ErrNoMetricSubsystem is an error, raised when no metric subsystem is configured.
+	ErrNoMetricSubsystem = errors.New("no metrics subsystem")
 )

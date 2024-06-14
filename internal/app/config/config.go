@@ -21,6 +21,24 @@ func (db Database) isValid() error {
 	return nil
 }
 
+type Server struct {
+	Address        string
+	AllowedOrigins []string
+	SwaggerEnabled bool
+}
+
+func (s Server) isValid() error {
+	if s.Address == "" {
+		return ErrNoServerAddress
+	}
+
+	if len(s.AllowedOrigins) == 0 {
+		return ErrNoAllowedOrigins
+	}
+
+	return nil
+}
+
 // Metrics holds configuration regarding the metrics server.
 type Metrics struct {
 	Namespace string
@@ -28,15 +46,25 @@ type Metrics struct {
 	Address   string
 }
 
+func (m Metrics) isValid() error {
+	if m.Namespace == "" {
+		return ErrNoMetricNamespace
+	}
+
+	if m.Subsystem == "" {
+		return ErrNoMetricSubsystem
+	}
+
+	return nil
+}
+
 // Config holds all application configuration.
 type Config struct {
 	ProvisioningFile string
-	ListenAddress    string
 	Metrics          Metrics
 	Database         Database
-	AllowedOrigins   []string
+	Server           Server
 	Verbose          int
-	SwaggerEnabled   bool
 }
 
 // IsValid validates the config by checking own values and calling isValid on sub config objects.
@@ -45,17 +73,19 @@ func (c Config) IsValid() error {
 		return ErrNoProvisioningFile
 	}
 
-	if c.ListenAddress == "" {
-		return ErrNoListenAddress
+	err := c.Metrics.isValid()
+	if err != nil {
+		return fmt.Errorf("error validating metrics config: %w", err)
 	}
 
-	if len(c.AllowedOrigins) == 0 {
-		return ErrNoAllowedOrigins
-	}
-
-	err := c.Database.isValid()
+	err = c.Database.isValid()
 	if err != nil {
 		return fmt.Errorf("error validating database config: %w", err)
+	}
+
+	err = c.Server.isValid()
+	if err != nil {
+		return fmt.Errorf("error validating server config: %w", err)
 	}
 
 	return nil
@@ -65,9 +95,6 @@ const (
 	envPrefix = "STATUS_PAGE"
 
 	verbose = "verbose"
-
-	swaggerUIEnabled        = "swagger.ui.enabled"
-	swaggerUIEnabledDefault = false
 
 	databaseConnectionString        = "database.connection-string"
 	databaseConnectionStringDefault = ""
@@ -79,20 +106,22 @@ const (
 	metricsAddress          = "metrics.address"
 	metricsAddressDefault   = ""
 
-	listenAddress        = "listen-address"
-	listenAddressDefault = ":3000"
-	allowedOrigins       = "allowed-origins"
+	serverAddress                 = "server.address"
+	serverAddressDefault          = ":3000"
+	serverAllowedOrigins          = "server.allowed-origins"
+	serverSwaggerUIEnabled        = "server.swagger.ui.enabled"
+	serverSwaggerUIEnabledDefault = false
 
 	provisioningFile        = "provisioning-file"
 	provisioningFileDefault = "./provisioning.yaml"
 )
 
-var allowedOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
+var serverAllowedOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
 
 func setDefaults() {
 	viper.SetDefault(verbose, 0)
 
-	viper.SetDefault(swaggerUIEnabled, swaggerUIEnabledDefault)
+	viper.SetDefault(serverSwaggerUIEnabled, serverSwaggerUIEnabledDefault)
 
 	viper.SetDefault(databaseConnectionString, databaseConnectionStringDefault)
 
@@ -100,8 +129,8 @@ func setDefaults() {
 	viper.SetDefault(metricsSubsystem, metricsSubsystemDefault)
 	viper.SetDefault(metricsAddress, metricsAddressDefault)
 
-	viper.SetDefault(listenAddress, listenAddressDefault)
-	viper.SetDefault(allowedOrigins, allowedOriginsDefault)
+	viper.SetDefault(serverAddress, serverAddressDefault)
+	viper.SetDefault(serverAllowedOrigins, serverAllowedOriginsDefault)
 
 	viper.SetDefault(provisioningFile, provisioningFileDefault)
 }
@@ -109,16 +138,15 @@ func setDefaults() {
 func setFlags() {
 	pflag.CountP(verbose, "v", "Increase log level")
 
-	pflag.Bool(swaggerUIEnabled, swaggerUIEnabledDefault, "Enable swagger UI for development.")
-
 	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string")
 
 	pflag.String(metricsNamespace, metricsNamespace, "Metrics namespace")
 	pflag.String(metricsSubsystem, metricsSubsystem, "Metrics sub system name")
 	pflag.String(metricsAddress, metricsAddressDefault, "Metrics server listen address")
 
-	pflag.String(listenAddress, listenAddressDefault, "Server listen address")
-	pflag.StringArray(allowedOrigins, allowedOriginsDefault, "Server CORS origins to accept")
+	pflag.String(serverAddress, serverAddressDefault, "Server listen address")
+	pflag.StringArray(serverAllowedOrigins, serverAllowedOriginsDefault, "Server CORS origins to accept")
+	pflag.Bool(serverSwaggerUIEnabled, serverSwaggerUIEnabledDefault, "Enable swagger UI for development.")
 
 	pflag.String(provisioningFile, provisioningFileDefault, "YAML file with startup provisioning")
 }
@@ -129,18 +157,20 @@ func pflagNormalizer(_ *pflag.FlagSet, name string) pflag.NormalizedName {
 
 func buildConfig() *Config {
 	return &Config{
-		AllowedOrigins: viper.GetStringSlice(allowedOrigins),
 		Database: Database{
 			ConnectionString: strings.TrimSpace(viper.GetString(databaseConnectionString)),
 		},
-		ListenAddress: strings.TrimSpace(viper.GetString(listenAddress)),
+		Server: Server{
+			Address:        strings.TrimSpace(viper.GetString(serverAddress)),
+			AllowedOrigins: viper.GetStringSlice(serverAllowedOrigins),
+			SwaggerEnabled: viper.GetBool(serverSwaggerUIEnabled),
+		},
 		Metrics: Metrics{
 			Namespace: strings.TrimSpace(viper.GetString(metricsNamespace)),
 			Subsystem: strings.TrimSpace(viper.GetString(metricsSubsystem)),
 			Address:   strings.TrimSpace(viper.GetString(metricsAddress)),
 		},
 		ProvisioningFile: strings.TrimSpace(viper.GetString(provisioningFile)),
-		SwaggerEnabled:   viper.GetBool(swaggerUIEnabled),
 		Verbose:          viper.GetInt(verbose),
 	}
 }
