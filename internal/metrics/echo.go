@@ -1,6 +1,7 @@
 package metrics
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/SovereignCloudStack/status-page-api/internal/app/config"
@@ -52,4 +53,11 @@ func (s *Server) Start() error {
 	s.logger.Debug().Msg("metrics server not configured")
 
 	return nil
+}
+
+// Shutdown gracefully stops the metrics server.
+func (s *Server) Shutdown(ctx context.Context) error {
+	err := s.echo.Shutdown(ctx)
+
+	return fmt.Errorf("error shutting down metrics server: %w", err)
 }
