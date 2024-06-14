@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -10,7 +11,7 @@ import (
 
 // Database holds configuration regarding the database connection.
 type Database struct {
-	ConnectionString string `json:"-"` // do not leak databse password when logging.
+	ConnectionString string `json:"-"` // do not leak database password when logging.
 }
 
 func (db Database) isValid() error {
@@ -21,6 +22,7 @@ func (db Database) isValid() error {
 	return nil
 }
 
+// Server holds configuration regarding the api server.
 type Server struct {
 	Address        string
 	AllowedOrigins []string
@@ -65,6 +67,7 @@ type Config struct {
 	Database         Database
 	Server           Server
 	Verbose          int
+	ShutdownTimeout  time.Duration
 }
 
 // IsValid validates the config by checking own values and calling isValid on sub config objects.
@@ -114,6 +117,9 @@ const (
 
 	provisioningFile        = "provisioning-file"
 	provisioningFileDefault = "./provisioning.yaml"
+
+	shutdownTimeout        = "shutdown-timeout"
+	shutdownTimeoutDefault = 50 * time.Millisecond
 )
 
 var serverAllowedOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
@@ -133,22 +139,26 @@ func setDefaults() {
 	viper.SetDefault(serverAllowedOrigins, serverAllowedOriginsDefault)
 
 	viper.SetDefault(provisioningFile, provisioningFileDefault)
+
+	viper.SetDefault(shutdownTimeout, shutdownTimeoutDefault)
 }
 
 func setFlags() {
 	pflag.CountP(verbose, "v", "Increase log level")
 
-	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string")
+	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string.")
 
-	pflag.String(metricsNamespace, metricsNamespace, "Metrics namespace")
-	pflag.String(metricsSubsystem, metricsSubsystem, "Metrics sub system name")
-	pflag.String(metricsAddress, metricsAddressDefault, "Metrics server listen address")
+	pflag.String(metricsNamespace, metricsNamespace, "Metrics namespace.")
+	pflag.String(metricsSubsystem, metricsSubsystem, "Metrics sub system name.")
+	pflag.String(metricsAddress, metricsAddressDefault, "Metrics server listen address.")
 
-	pflag.String(serverAddress, serverAddressDefault, "Server listen address")
-	pflag.StringArray(serverAllowedOrigins, serverAllowedOriginsDefault, "Server CORS origins to accept")
+	pflag.String(serverAddress, serverAddressDefault, "Server listen address.")
+	pflag.StringArray(serverAllowedOrigins, serverAllowedOriginsDefault, "Server CORS origins to accept.")
 	pflag.Bool(serverSwaggerUIEnabled, serverSwaggerUIEnabledDefault, "Enable swagger UI for development.")
 
-	pflag.String(provisioningFile, provisioningFileDefault, "YAML file with startup provisioning")
+	pflag.String(provisioningFile, provisioningFileDefault, "YAML file with startup provisioning.")
+
+	pflag.Duration(shutdownTimeout, shutdownTimeoutDefault, "Duration to wait for the server to gracefully shutdown.")
 }
 
 func pflagNormalizer(_ *pflag.FlagSet, name string) pflag.NormalizedName {
@@ -172,6 +182,7 @@ func buildConfig() *Config {
 		},
 		ProvisioningFile: strings.TrimSpace(viper.GetString(provisioningFile)),
 		Verbose:          viper.GetInt(verbose),
+		ShutdownTimeout:  viper.GetDuration(shutdownTimeout),
 	}
 }
 
