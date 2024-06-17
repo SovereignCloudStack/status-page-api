@@ -93,7 +93,7 @@ func provisionPhases(phases []DbDef.Phase, dbTx *gorm.DB, logger *zerolog.Logger
 
 	// set initial phase and orders.
 	for phaseIndex := range phases {
-		order := phaseIndex //nolint:copyloopvar
+		order := phaseIndex
 
 		phases[phaseIndex].Order = &order
 		phases[phaseIndex].Generation = &initialPhaseGeneration

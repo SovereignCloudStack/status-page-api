@@ -42,9 +42,9 @@ func main() { //nolint:funlen,cyclop
 	switch conf.Verbose {
 	case 1:
 		logger = logger.Level(zerolog.InfoLevel)
-	case 2: //nolint:gomnd
+	case 2: //nolint:mnd
 		logger = logger.Level(zerolog.DebugLevel)
-	case 3: //nolint:gomnd
+	case 3: //nolint:mnd
 		logger = logger.Level(zerolog.TraceLevel)
 	}
 
