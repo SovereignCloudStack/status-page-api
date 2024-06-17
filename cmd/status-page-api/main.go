@@ -106,7 +106,6 @@ func main() { //nolint:funlen,cyclop
 			logger.Warn().Err(err).Msg("error shutting down metrics server")
 		}
 
-		time.Sleep(conf.ShutdownTimeout)
 		cancel()
 	case sig := <-shutdownChan:
 		logger.Log().Str("signal", sig.String()).Msg("got shutdown signal")
@@ -123,7 +122,6 @@ func main() { //nolint:funlen,cyclop
 			logger.Warn().Err(err).Msg("error shutting down server")
 		}
 
-		time.Sleep(conf.ShutdownTimeout)
 		cancel()
 	}
 }
