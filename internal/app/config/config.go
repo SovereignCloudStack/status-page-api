@@ -119,7 +119,7 @@ const (
 	provisioningFileDefault = "./provisioning.yaml"
 
 	shutdownTimeout        = "shutdown-timeout"
-	shutdownTimeoutDefault = 50 * time.Millisecond
+	shutdownTimeoutDefault = 10 * time.Second
 )
 
 var serverAllowedOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
