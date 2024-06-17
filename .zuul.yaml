@@ -30,7 +30,7 @@
         - name: ubuntu-jammy
           label: ubuntu-jammy
     vars:
-      go_command: build main.go
+      go_command: build cmd/status-page-api/main.go
       go_version: 1.22.4
 
 - project:
