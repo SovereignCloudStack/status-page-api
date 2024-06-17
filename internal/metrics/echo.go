@@ -2,7 +2,9 @@ package metrics
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/SovereignCloudStack/status-page-api/internal/app/config"
 	"github.com/labstack/echo-contrib/echoprometheus"
@@ -47,6 +49,10 @@ func (s *Server) Start() error {
 
 		err := s.echo.Start(s.conf.Address)
 
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
+
 		return fmt.Errorf("error running metrics server: %w", err)
 	}
 
@@ -58,6 +64,9 @@ func (s *Server) Start() error {
 // Shutdown gracefully stops the metrics server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	err := s.echo.Shutdown(ctx)
+	if err != nil {
+		return fmt.Errorf("error shutting down metrics server: %w", err)
+	}
 
-	return fmt.Errorf("error shutting down metrics server: %w", err)
+	return nil
 }

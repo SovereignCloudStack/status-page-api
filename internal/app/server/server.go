@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/SovereignCloudStack/status-page-api/internal/app/config"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/logging"
@@ -61,6 +63,9 @@ func (s *Server) Start() error {
 	s.logger.Log().Str("address", s.conf.Address).Msg("api server start listening")
 
 	err := s.echo.Start(s.conf.Address)
+	if errors.Is(err, http.ErrServerClosed) {
+		return nil
+	}
 
 	return fmt.Errorf("error running api server: %w", err)
 }
@@ -68,6 +73,9 @@ func (s *Server) Start() error {
 // Shutdown gracefully stops the api server.
 func (s *Server) Shutdown(ctx context.Context) error {
 	err := s.echo.Shutdown(ctx)
+	if err != nil {
+		return fmt.Errorf("error shutting down api server: %w", err)
+	}
 
-	return fmt.Errorf("error shutting down api server: %w", err)
+	return nil
 }

@@ -16,7 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func main() { //nolint:funlen
+func main() { //nolint:funlen,cyclop
 	// signal handling
 	shutdownChan := make(chan os.Signal, 1)
 	signal.Notify(shutdownChan, syscall.SIGINT, syscall.SIGTERM)
@@ -77,7 +77,10 @@ func main() { //nolint:funlen
 
 	// start metric server
 	go func() {
-		logger.Warn().Err(metricsServer.Start()).Msg("error running metrics server")
+		err := metricsServer.Start()
+		if err != nil {
+			logger.Warn().Err(err).Msg("error running metrics server")
+		}
 	}()
 
 	// handle error of api server
@@ -86,26 +89,41 @@ func main() { //nolint:funlen
 	// start api server
 	go func() {
 		err := apiServer.Start()
-		errChan <- err
+		if err != nil {
+			errChan <- err
+		}
 	}()
 
+	// handle shutdown
 	select {
 	case err := <-errChan:
-		logger.Warn().Err(err).Msg("error running server, shutting down")
+		logger.Error().Err(err).Msg("error running server, shutting down")
 
 		ctx, cancel := context.WithTimeout(context.Background(), conf.ShutdownTimeout)
 
-		logger.Warn().Err(metricsServer.Shutdown(ctx)).Msg("error shutting down metrics server")
+		err = metricsServer.Shutdown(ctx)
+		if err != nil {
+			logger.Warn().Err(err).Msg("error shutting down metrics server")
+		}
 
+		time.Sleep(conf.ShutdownTimeout)
 		cancel()
 	case sig := <-shutdownChan:
-		logger.Log().Interface("signal", sig).Msg("got shutdown signal")
+		logger.Log().Str("signal", sig.String()).Msg("got shutdown signal")
 
 		ctx, cancel := context.WithTimeout(context.Background(), conf.ShutdownTimeout)
 
-		logger.Warn().Err(metricsServer.Shutdown(ctx)).Msg("error shutting down metrics server")
-		logger.Warn().Err(apiServer.Shutdown(ctx)).Msg("error shutting down server")
+		err := metricsServer.Shutdown(ctx)
+		if err != nil {
+			logger.Warn().Err(err).Msg("error shutting down metrics server")
+		}
 
+		err = apiServer.Shutdown(ctx)
+		if err != nil {
+			logger.Warn().Err(err).Msg("error shutting down server")
+		}
+
+		time.Sleep(conf.ShutdownTimeout)
 		cancel()
 	}
 }
