@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,6 +10,7 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/db"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/metrics"
 	APIServer "github.com/SovereignCloudStack/status-page-api/internal/app/server"
+	"github.com/SovereignCloudStack/status-page-api/internal/app/util/shutdown"
 	APIImplementation "github.com/SovereignCloudStack/status-page-api/pkg/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -55,6 +55,7 @@ func main() { //nolint:funlen,cyclop
 	gormLogger := logger.With().Str("component", "gorm").Logger()
 	handlerLogger := logger.With().Str("component", "handler").Logger()
 	metricsLogger := logger.With().Str("component", "metrics").Logger()
+	shutdownLogger := logger.With().Str("component", "shutdown").Logger()
 
 	// DB setup
 	dbWrapper, err := db.New(conf.Database.ConnectionString, &gormLogger)
@@ -99,29 +100,11 @@ func main() { //nolint:funlen,cyclop
 	case err := <-errChan:
 		logger.Error().Err(err).Msg("error running server, shutting down")
 
-		ctx, cancel := context.WithTimeout(context.Background(), conf.ShutdownTimeout)
+		shutdown.Shutdown(conf.ShutdownTimeout, apiServer, metricsServer, &shutdownLogger)
 
-		err = metricsServer.Shutdown(ctx)
-		if err != nil {
-			logger.Warn().Err(err).Msg("error shutting down metrics server")
-		}
-
-		cancel()
 	case sig := <-shutdownChan:
 		logger.Log().Str("signal", sig.String()).Msg("got shutdown signal")
 
-		ctx, cancel := context.WithTimeout(context.Background(), conf.ShutdownTimeout)
-
-		err := metricsServer.Shutdown(ctx)
-		if err != nil {
-			logger.Warn().Err(err).Msg("error shutting down metrics server")
-		}
-
-		err = apiServer.Shutdown(ctx)
-		if err != nil {
-			logger.Warn().Err(err).Msg("error shutting down server")
-		}
-
-		cancel()
+		shutdown.Shutdown(conf.ShutdownTimeout, apiServer, metricsServer, &shutdownLogger)
 	}
 }
