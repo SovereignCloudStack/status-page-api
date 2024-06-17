@@ -21,9 +21,10 @@ func Shutdown(
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
+	waitGroup.Add(2)
+
 	go func() {
 		defer waitGroup.Done()
-		waitGroup.Add(1)
 
 		err := metricsServer.Shutdown(ctx)
 		if err != nil {
@@ -33,7 +34,6 @@ func Shutdown(
 
 	go func() {
 		defer waitGroup.Done()
-		waitGroup.Add(1)
 
 		err := apiServer.Shutdown(ctx)
 		if err != nil {
