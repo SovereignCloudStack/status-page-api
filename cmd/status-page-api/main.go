@@ -9,8 +9,8 @@ import (
 
 	"github.com/SovereignCloudStack/status-page-api/internal/app/config"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/db"
+	"github.com/SovereignCloudStack/status-page-api/internal/app/metrics"
 	APIServer "github.com/SovereignCloudStack/status-page-api/internal/app/server"
-	"github.com/SovereignCloudStack/status-page-api/internal/metrics"
 	APIImplementation "github.com/SovereignCloudStack/status-page-api/pkg/server"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
