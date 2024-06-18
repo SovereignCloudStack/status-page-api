@@ -5,26 +5,26 @@ linters:
     - asciicheck
     - bidichk
     - bodyclose
+    - canonicalheader
     - containedctx
     - contextcheck
     - copyloopvar
     - cyclop
-    # - deadcode # deprecated
     - decorder
     # - depguard # unused
     - dogsled
     - dupl
     - dupword
     - durationcheck
+    - err113
     - errcheck
     - errchkjson
     - errname
     - errorlint
-    - execinquery
     - exhaustive
-    # - exhaustivestruct # deprecated
     - exhaustruct
     - exportloopref
+    - fatcontext
     # - forbidigo # unused
     - forcetypeassert
     - funlen
@@ -40,13 +40,10 @@ linters:
     - gocyclo
     - godot
     - godox
-    - goerr113
     - gofmt
     - gofumpt
     - goheader
     - goimports
-    # - golint # deprecated
-    - gomnd
     - gomoddirectives
     - gomodguard
     - goprintffuncname
@@ -55,21 +52,19 @@ linters:
     - gosmopolitan
     - govet
     - grouper
-    # - ifshort # deprecated
     - importas
     - inamedparam
     - ineffassign
     - interfacebloat
-    # - interfacer # deprecated
     - intrange
     - ireturn
     - lll
     - loggercheck
     - maintidx
     - makezero
-    # - maligned # deprecated
     - mirror
     - misspell
+    - mnd
     - musttag
     - nakedret
     - nestif
@@ -79,7 +74,6 @@ linters:
     - noctx
     - nolintlint
     - nonamedreturns
-    # - nosnakecase # deprecated
     - nosprintfhostport
     - paralleltest
     - perfsprint
@@ -90,12 +84,10 @@ linters:
     - reassign
     - revive
     - rowserrcheck
-    # - scopelint # deprecated
     - sloglint
     - spancheck
     - sqlclosecheck
     - staticcheck
-    # - structcheck # deprecated
     - stylecheck
     - tagalign
     - tagliatelle
@@ -110,7 +102,6 @@ linters:
     - unparam
     - unused
     - usestdlibvars
-    # - varcheck # deprecated
     - varnamelen
     - wastedassign
     - whitespace

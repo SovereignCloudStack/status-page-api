@@ -7,8 +7,8 @@
         - name: ubuntu-jammy
           label: ubuntu-jammy
     vars:
-      golangci_lint_version: 1.57.1
-      go_version: 1.22.1
+      golangci_lint_version: 1.59.1
+      go_version: 1.22.4
       golangci_lint_options: --timeout 5m
 
 - job:
@@ -20,7 +20,7 @@
           label: ubuntu-jammy
     vars:
       go_command: test ./...
-      go_version: 1.22.1
+      go_version: 1.22.4
 
 - job:
     name: golang-build
@@ -30,8 +30,8 @@
         - name: ubuntu-jammy
           label: ubuntu-jammy
     vars:
-      go_command: build main.go
-      go_version: 1.22.1
+      go_command: build cmd/status-page-api/main.go
+      go_version: 1.22.4
 
 - project:
     name: SovereignCloudStack/status-page-api
