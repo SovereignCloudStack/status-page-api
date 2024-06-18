@@ -21,8 +21,8 @@ func Shutdown(
 
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 
-	numberOfProcesses := 2
-	waitGroup.Add(numberOfProcesses)
+	numberOfServices := 2
+	waitGroup.Add(numberOfServices)
 
 	go func() {
 		defer waitGroup.Done()
