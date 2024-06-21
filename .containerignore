@@ -5,3 +5,5 @@
 .golangci.yaml
 .zuul.yaml
 Makefile
+.containerignore
+Containerfile
