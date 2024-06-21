@@ -4,7 +4,7 @@ go 1.22.4
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
-	github.com/SovereignCloudStack/status-page-openapi/pkg/api v0.0.0-20240325142952-43819c5eb61d
+	github.com/SovereignCloudStack/status-page-openapi v0.0.0-20240620114302-b66eaf6fd95f
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo-contrib v0.17.1
 	github.com/labstack/echo/v4 v4.12.0
