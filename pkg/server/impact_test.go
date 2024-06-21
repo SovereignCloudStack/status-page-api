@@ -47,7 +47,7 @@ var _ = Describe("Impact", Ordered, func() {
 		// expected SQL
 		expectedImpactTypesQuery = regexp.QuoteMeta(`SELECT * FROM "impact_types"`)
 		expectedImpactTypeQuery  = regexp.QuoteMeta(`SELECT * FROM "impact_types" WHERE id = $1 ORDER BY "impact_types"."id" LIMIT $2`) //nolint:lll
-		expectedImpactTypeInsert = regexp.QuoteMeta(`INSERT INTO "impact_types" ("id","display_name","description") VALUES ($1,$2,$3)`) //nolint:lll
+		expectedImpactTypeInsert = regexp.QuoteMeta(`INSERT INTO "impact_types" ("display_name","description","id") VALUES ($1,$2,$3)`) //nolint:lll
 		expectedImpactTypeDelete = regexp.QuoteMeta(`DELETE FROM "impact_types" WHERE id = $1`)
 		expectedImpactTypeUpdate = regexp.QuoteMeta(`UPDATE "impact_types" SET "display_name"=$1 WHERE "id" = $2`)
 
@@ -57,7 +57,7 @@ var _ = Describe("Impact", Ordered, func() {
 		// filled test impact type
 		impactType = db.ImpactType{
 			Model: db.Model{
-				ID: &impactTypeUUID,
+				ID: impactTypeUUID,
 			},
 			DisplayName: test.Ptr("Performance degration"),
 			Description: test.Ptr("Performance has been decreased in some parts of the system."),

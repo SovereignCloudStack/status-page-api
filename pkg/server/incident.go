@@ -103,7 +103,7 @@ func (i *Implementation) CreateIncident(ctx echo.Context) error {
 	}
 
 	return ctx.JSON(http.StatusCreated, apiServerDefinition.IdResponse{ //nolint:wrapcheck
-		Id: *incident.ID,
+		Id: incident.ID,
 	})
 }
 
@@ -195,7 +195,7 @@ func (i *Implementation) UpdateIncident(
 		return echo.ErrBadRequest
 	}
 
-	incident.ID = &incidentID
+	incident.ID = incidentID
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 

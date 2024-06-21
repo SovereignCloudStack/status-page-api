@@ -10,7 +10,6 @@ import (
 
 // Incident represents an incident happening to one or more [Component].
 type Incident struct {
-	Model           `gorm:"embedded"`
 	DisplayName     *apiServerDefinition.DisplayName
 	Description     *apiServerDefinition.Description
 	Affects         *[]Impact `gorm:"foreignKey:IncidentID;constraint:OnDelete:CASCADE"`
@@ -20,12 +19,13 @@ type Incident struct {
 	PhaseOrder      *apiServerDefinition.Incremental
 	Phase           *Phase            `gorm:"foreignKey:PhaseGeneration,PhaseOrder;References:Generation,Order"`
 	Updates         *[]IncidentUpdate `gorm:"foreignKey:IncidentID"`
+	Model           `gorm:"embedded"`
 }
 
 // ToAPIResponse converts to API response.
 func (i *Incident) ToAPIResponse() apiServerDefinition.IncidentResponseData {
 	return apiServerDefinition.IncidentResponseData{
-		Id:          *i.ID,
+		Id:          i.ID,
 		DisplayName: i.DisplayName,
 		Description: i.Description,
 		BeganAt:     i.BeganAt,

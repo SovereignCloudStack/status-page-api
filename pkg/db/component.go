@@ -4,16 +4,16 @@ import apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/p
 
 // Component represents a single component that could be affected by many [Incident].
 type Component struct {
-	Model              `gorm:"embedded"`
 	DisplayName        *apiServerDefinition.DisplayName `yaml:"displayname"`
 	Labels             *Labels                          `gorm:"type:jsonb"             yaml:"labels"`
 	ActivelyAffectedBy *[]Impact                        `gorm:"foreignKey:ComponentID"`
+	Model              `gorm:"embedded"`
 }
 
 // ToAPIResponse converts to API response.
 func (c *Component) ToAPIResponse() apiServerDefinition.ComponentResponseData {
 	return apiServerDefinition.ComponentResponseData{
-		Id:                 *c.ID,
+		Id:                 c.ID,
 		DisplayName:        c.DisplayName,
 		Labels:             (*apiServerDefinition.Labels)(c.Labels),
 		ActivelyAffectedBy: c.GetImpactIncidentList(),

@@ -23,7 +23,7 @@ var _ = Describe("Component", func() {
 		impactTypeUUID = uuid.MustParse(impactTypeID)
 		component      = db.Component{
 			Model: db.Model{
-				ID: &componentUUID,
+				ID: componentUUID,
 			},
 			DisplayName: test.Ptr("Storage"),
 			Labels:      &db.Labels{"data-center": "west", "location": "germany"},

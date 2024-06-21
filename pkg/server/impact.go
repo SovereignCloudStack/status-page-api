@@ -74,7 +74,7 @@ func (i *Implementation) CreateImpactType(ctx echo.Context) error { //nolint:dup
 	}
 
 	return ctx.JSON(http.StatusCreated, apiServerDefinition.IdResponse{ //nolint:wrapcheck
-		Id: *impactType.ID,
+		Id: impactType.ID,
 	})
 }
 
@@ -165,7 +165,7 @@ func (i *Implementation) UpdateImpactType(
 		return echo.ErrBadRequest
 	}
 
-	impactType.ID = &impactTypeID
+	impactType.ID = impactTypeID
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 

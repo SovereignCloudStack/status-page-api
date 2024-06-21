@@ -77,7 +77,7 @@ func (i *Implementation) CreateComponent(ctx echo.Context) error { //nolint:dupl
 	}
 
 	return ctx.JSON(http.StatusCreated, apiServerDefinition.IdResponse{ //nolint:wrapcheck
-		Id: *component.ID,
+		Id: component.ID,
 	})
 }
 
@@ -170,7 +170,7 @@ func (i *Implementation) UpdateComponent(
 		return echo.ErrBadRequest
 	}
 
-	component.ID = &componentID
+	component.ID = componentID
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 

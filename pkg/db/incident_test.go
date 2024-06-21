@@ -40,7 +40,7 @@ var _ = Describe("Incident", func() {
 
 		incident = db.Incident{
 			Model: db.Model{
-				ID: &incidentUUID,
+				ID: incidentUUID,
 			},
 			DisplayName: test.Ptr("Disk incident"),
 			Description: test.Ptr("Disk performance decrease."),

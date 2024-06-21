@@ -49,7 +49,7 @@ var _ = Describe("Component", Ordered, func() {
 		// expected SQL
 		expectedComponentsQuery = regexp.QuoteMeta(`SELECT * FROM "components"`)
 		expectedComponentQuery  = regexp.QuoteMeta(`SELECT * FROM "components" WHERE id = $1 ORDER BY "components"."id" LIMIT $2`) //nolint:lll
-		expectedComponentInsert = regexp.QuoteMeta(`INSERT INTO "components" ("id","display_name","labels") VALUES ($1,$2,$3)`)    //nolint:lll
+		expectedComponentInsert = regexp.QuoteMeta(`INSERT INTO "components" ("display_name","labels","id") VALUES ($1,$2,$3)`)    //nolint:lll
 		expectedComponentDelete = regexp.QuoteMeta(`DELETE FROM "components" WHERE id = $1`)
 		expectedComponentUpdate = regexp.QuoteMeta(`UPDATE "components" SET "display_name"=$1 WHERE "id" = $2`)
 		expectedImpactQuery     = `SELECT .+ FROM "impacts" LEFT JOIN "incidents" "Incident" ON "impacts"."incident_id" = "Incident"."id" WHERE ended_at IS NULL AND "impacts"."component_id" = \$1` //nolint:lll
@@ -60,7 +60,7 @@ var _ = Describe("Component", Ordered, func() {
 		// filled test component
 		component = db.Component{
 			Model: db.Model{
-				ID: &componentUUID,
+				ID: componentUUID,
 			},
 			DisplayName:        test.Ptr("Storage"),
 			ActivelyAffectedBy: &[]db.Impact{},

@@ -62,7 +62,7 @@ var _ = Describe("Incident", func() {
 		expectedIncidentQuery = regexp.
 					QuoteMeta(`SELECT * FROM "incidents" WHERE id = $1 ORDER BY "incidents"."id" LIMIT $2`)
 		expectedIncidentInsert = regexp.
-					QuoteMeta(`INSERT INTO "incidents" ("id","display_name","description","began_at","ended_at","phase_generation","phase_order") VALUES ($1,$2,$3,$4,$5,$6,$7)`) //nolint:lll
+					QuoteMeta(`INSERT INTO "incidents" ("display_name","description","began_at","ended_at","phase_generation","phase_order","id") VALUES ($1,$2,$3,$4,$5,$6,$7)`) //nolint:lll
 		expectedIncidentDelete = regexp.
 					QuoteMeta(`DELETE FROM "incidents" WHERE id = $1`)
 		expectedIncidentUpdate = regexp.
@@ -80,7 +80,7 @@ var _ = Describe("Incident", func() {
 		// filled test incident
 		incident = db.Incident{
 			Model: db.Model{
-				ID: &incidentUUID,
+				ID: incidentUUID,
 			},
 			DisplayName:     test.Ptr("Disk impact"),
 			Description:     test.Ptr("Disk IO low"),

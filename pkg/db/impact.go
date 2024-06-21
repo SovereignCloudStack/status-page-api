@@ -6,15 +6,15 @@ import (
 
 // ImpactType represents the type of impact.
 type ImpactType struct {
-	Model       `gorm:"embedded"`
 	DisplayName *apiServerDefinition.DisplayName `gorm:"not null"    yaml:"displayname"`
 	Description *apiServerDefinition.Description `yaml:"description"`
+	Model       `gorm:"embedded"`
 }
 
 // ToAPIResponse converts to API response.
 func (it *ImpactType) ToAPIResponse() apiServerDefinition.ImpactTypeResponseData {
 	return apiServerDefinition.ImpactTypeResponseData{
-		Id:          *it.ID,
+		Id:          it.ID,
 		DisplayName: it.DisplayName,
 		Description: it.Description,
 	}

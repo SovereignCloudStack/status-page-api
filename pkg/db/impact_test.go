@@ -16,7 +16,7 @@ var impactTypeUUID = uuid.MustParse(impactTypeID)
 var _ = Describe("ImpactType", func() {
 	impactType := db.ImpactType{
 		Model: db.Model{
-			ID: &impactTypeUUID,
+			ID: impactTypeUUID,
 		},
 		DisplayName: test.Ptr("Performance Degration"),
 		Description: test.Ptr("Performance has been down."),
