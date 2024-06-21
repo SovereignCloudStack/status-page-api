@@ -1,30 +1,27 @@
 package db
 
 import (
-	"fmt"
-
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
-	"github.com/google/uuid"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 )
 
 // ImpactType represents the type of impact.
 type ImpactType struct {
 	Model       `gorm:"embedded"`
-	DisplayName *api.DisplayName `gorm:"not null"    yaml:"displayname"`
-	Description *api.Description `yaml:"description"`
+	DisplayName *apiServerDefinition.DisplayName `gorm:"not null"    yaml:"displayname"`
+	Description *apiServerDefinition.Description `yaml:"description"`
 }
 
 // ToAPIResponse converts to API response.
-func (it *ImpactType) ToAPIResponse() api.ImpactTypeResponseData {
-	return api.ImpactTypeResponseData{
-		Id:          it.ID.String(),
+func (it *ImpactType) ToAPIResponse() apiServerDefinition.ImpactTypeResponseData {
+	return apiServerDefinition.ImpactTypeResponseData{
+		Id:          *it.ID,
 		DisplayName: it.DisplayName,
 		Description: it.Description,
 	}
 }
 
 // ImpactTypeFromAPI creates an [ImpactType] from an API request.
-func ImpactTypeFromAPI(impactTypeRequest *api.ImpactType) (*ImpactType, error) {
+func ImpactTypeFromAPI(impactTypeRequest *apiServerDefinition.ImpactType) (*ImpactType, error) {
 	if impactTypeRequest == nil {
 		return nil, ErrEmptyValue
 	}
@@ -45,11 +42,11 @@ type Impact struct {
 	ComponentID  *ID `gorm:"primaryKey"`
 	ImpactTypeID *ID `gorm:"primaryKey"`
 
-	Severity *api.SeverityValue `gorm:"type:smallint"`
+	Severity *apiServerDefinition.SeverityValue `gorm:"type:smallint"`
 }
 
-// AffectsFromImpactComponentList parses a [api.ImpactComponentList] to an [Impact] list.
-func AffectsFromImpactComponentList(componentImpacts *api.ImpactComponentList) (*[]Impact, error) {
+// AffectsFromImpactComponentList parses a [apiServerDefinition.ImpactComponentList] to an [Impact] list.
+func AffectsFromImpactComponentList(componentImpacts *apiServerDefinition.ImpactComponentList) (*[]Impact, error) {
 	if componentImpacts == nil {
 		return nil, ErrEmptyValue
 	}
@@ -57,18 +54,8 @@ func AffectsFromImpactComponentList(componentImpacts *api.ImpactComponentList) (
 	impacts := make([]Impact, len(*componentImpacts))
 
 	for impactIndex, impact := range *componentImpacts {
-		componentID, err := uuid.Parse(*impact.Reference)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing component id: %w", err)
-		}
-
-		impactTypeID, err := uuid.Parse(*impact.Type)
-		if err != nil {
-			return nil, fmt.Errorf("error parsing impact type id: %w", err)
-		}
-
-		impacts[impactIndex].ComponentID = &componentID
-		impacts[impactIndex].ImpactTypeID = &impactTypeID
+		impacts[impactIndex].ComponentID = impact.Reference
+		impacts[impactIndex].ImpactTypeID = impact.Type
 
 		impacts[impactIndex].Severity = impact.Severity
 	}

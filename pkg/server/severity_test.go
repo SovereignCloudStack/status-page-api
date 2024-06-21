@@ -12,7 +12,7 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -97,8 +97,8 @@ var _ = Describe("Severity", func() {
 					ExpectQuery(expectedSeveritiesQuery).
 					WillReturnRows(severityRows)
 
-				expectedResult, _ := json.Marshal(api.SeverityListResponse{
-					Data: []api.Severity{},
+				expectedResult, _ := json.Marshal(apiServerDefinition.SeverityListResponse{
+					Data: []apiServerDefinition.Severity{},
 				})
 				// Act
 				err := handlers.GetSeverities(ctx)
@@ -119,8 +119,8 @@ var _ = Describe("Severity", func() {
 						severityRows.AddRow(severity.DisplayName, severity.Value),
 					)
 
-				expectedResult, _ := json.Marshal(api.SeverityListResponse{
-					Data: []api.Severity{
+				expectedResult, _ := json.Marshal(apiServerDefinition.SeverityListResponse{
+					Data: []apiServerDefinition.Severity{
 						severity.ToAPIResponse(),
 					},
 				})
@@ -164,7 +164,7 @@ var _ = Describe("Severity", func() {
 				echoLogger,
 				http.MethodPost,
 				"/severities",
-				api.Severity{
+				apiServerDefinition.Severity{
 					DisplayName: test.Ptr("broken"),
 					Value:       test.Ptr(50),
 				},
@@ -319,7 +319,7 @@ var _ = Describe("Severity", func() {
 						severityRows.AddRow(severity.DisplayName, severity.Value),
 					)
 
-				expectedResult, _ := json.Marshal(api.SeverityResponse{
+				expectedResult, _ := json.Marshal(apiServerDefinition.SeverityResponse{
 					Data: severity.ToAPIResponse(),
 				})
 
@@ -374,7 +374,7 @@ var _ = Describe("Severity", func() {
 				echoLogger,
 				http.MethodPatch,
 				severityEndpoint,
-				api.Severity{
+				apiServerDefinition.Severity{
 					DisplayName: test.Ptr("impacted"),
 				},
 			)

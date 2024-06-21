@@ -12,7 +12,7 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/ginkgo/v2"
@@ -108,8 +108,8 @@ var _ = Describe("Impact", Ordered, func() {
 				// Arrange
 				sqlMock.ExpectQuery(expectedImpactTypesQuery).WillReturnRows(impactTypeRows)
 
-				expectedResult, _ := json.Marshal(api.ImpactTypeListResponse{
-					Data: []api.ImpactTypeResponseData{},
+				expectedResult, _ := json.Marshal(apiServerDefinition.ImpactTypeListResponse{
+					Data: []apiServerDefinition.ImpactTypeResponseData{},
 				})
 
 				// Act
@@ -131,8 +131,8 @@ var _ = Describe("Impact", Ordered, func() {
 						impactTypeRows.AddRow(impactType.ID, impactType.DisplayName, impactType.Description),
 					)
 
-				expectedResult, _ := json.Marshal(api.ImpactTypeListResponse{
-					Data: []api.ImpactTypeResponseData{
+				expectedResult, _ := json.Marshal(apiServerDefinition.ImpactTypeListResponse{
+					Data: []apiServerDefinition.ImpactTypeResponseData{
 						impactType.ToAPIResponse(),
 					},
 				})
@@ -174,7 +174,7 @@ var _ = Describe("Impact", Ordered, func() {
 				echoLogger,
 				http.MethodPost,
 				impactTypesEndpoint,
-				api.ImpactType{
+				apiServerDefinition.ImpactType{
 					DisplayName: test.Ptr("Performance degration"),
 				},
 			)
@@ -194,13 +194,9 @@ var _ = Describe("Impact", Ordered, func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				// parse answer to get uuid
-				var response api.IdResponse
+				var response apiServerDefinition.IdResponse
 				err = json.Unmarshal(res.Body.Bytes(), &response)
 
-				Ω(err).ShouldNot(HaveOccurred())
-
-				// check valid uuid
-				_, err = uuid.Parse(response.Id)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(res.Code).Should(Equal(http.StatusCreated))
 			})
@@ -261,7 +257,7 @@ var _ = Describe("Impact", Ordered, func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteImpactType(ctx, impactTypeID)
+				err := handlers.DeleteImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -278,7 +274,7 @@ var _ = Describe("Impact", Ordered, func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteImpactType(ctx, impactTypeID)
+				err := handlers.DeleteImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -294,29 +290,11 @@ var _ = Describe("Impact", Ordered, func() {
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.DeleteImpactType(ctx, impactTypeID)
+				err := handlers.DeleteImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodDelete,
-					"/impactTypes/ABC-123",
-					nil,
-				)
-				// Act
-				err := handlers.DeleteImpactType(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 	})
@@ -347,12 +325,12 @@ var _ = Describe("Impact", Ordered, func() {
 						impactTypeRows.AddRow(impactType.ID, impactType.DisplayName, impactType.Description),
 					)
 
-				expectedResult, _ := json.Marshal(api.ImpactTypeResponse{
+				expectedResult, _ := json.Marshal(apiServerDefinition.ImpactTypeResponse{
 					Data: impactType.ToAPIResponse(),
 				})
 
 				// Act
-				err := handlers.GetImpactType(ctx, impactTypeID)
+				err := handlers.GetImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -367,30 +345,11 @@ var _ = Describe("Impact", Ordered, func() {
 				sqlMock.ExpectQuery(expectedImpactTypeQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetImpactType(ctx, impactTypeID)
+				err := handlers.GetImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodGet,
-					"/impactTypes/ABC-123",
-					nil,
-				)
-
-				// Act
-				err := handlers.GetImpactType(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 
@@ -400,7 +359,7 @@ var _ = Describe("Impact", Ordered, func() {
 				sqlMock.ExpectQuery(expectedImpactTypeQuery).WillReturnRows(impactTypeRows)
 
 				// Act
-				err := handlers.GetImpactType(ctx, impactTypeID)
+				err := handlers.GetImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -421,7 +380,7 @@ var _ = Describe("Impact", Ordered, func() {
 				echoLogger,
 				http.MethodPatch,
 				impactTypeEndpoint,
-				api.ImpactType{
+				apiServerDefinition.ImpactType{
 					DisplayName: test.Ptr("Connectivity problems"),
 				},
 			)
@@ -438,7 +397,7 @@ var _ = Describe("Impact", Ordered, func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateImpactType(ctx, impactTypeID)
+				err := handlers.UpdateImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -458,28 +417,7 @@ var _ = Describe("Impact", Ordered, func() {
 				)
 
 				// Act
-				err := handlers.UpdateImpactType(ctx, impactTypeID)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodPatch,
-					"/impactTypes/ABC-123",
-					api.ImpactType{
-						DisplayName: test.Ptr("Connectivity problems"),
-					},
-				)
-
-				// Act
-				err := handlers.UpdateImpactType(ctx, "ABC-123")
+				err := handlers.UpdateImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -498,7 +436,7 @@ var _ = Describe("Impact", Ordered, func() {
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.UpdateImpactType(ctx, impactTypeID)
+				err := handlers.UpdateImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -517,7 +455,7 @@ var _ = Describe("Impact", Ordered, func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateImpactType(ctx, impactTypeID)
+				err := handlers.UpdateImpactType(ctx, impactTypeUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())

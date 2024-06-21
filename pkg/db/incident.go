@@ -4,33 +4,33 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 )
 
 // Incident represents an incident happening to one or more [Component].
 type Incident struct {
 	Model           `gorm:"embedded"`
-	DisplayName     *api.DisplayName
-	Description     *api.Description
+	DisplayName     *apiServerDefinition.DisplayName
+	Description     *apiServerDefinition.Description
 	Affects         *[]Impact `gorm:"foreignKey:IncidentID;constraint:OnDelete:CASCADE"`
-	BeganAt         *api.Date
-	EndedAt         *api.Date
-	PhaseGeneration *api.Incremental
-	PhaseOrder      *api.Incremental
+	BeganAt         *apiServerDefinition.Date
+	EndedAt         *apiServerDefinition.Date
+	PhaseGeneration *apiServerDefinition.Incremental
+	PhaseOrder      *apiServerDefinition.Incremental
 	Phase           *Phase            `gorm:"foreignKey:PhaseGeneration,PhaseOrder;References:Generation,Order"`
 	Updates         *[]IncidentUpdate `gorm:"foreignKey:IncidentID"`
 }
 
 // ToAPIResponse converts to API response.
-func (i *Incident) ToAPIResponse() api.IncidentResponseData {
-	return api.IncidentResponseData{
-		Id:          i.ID.String(),
+func (i *Incident) ToAPIResponse() apiServerDefinition.IncidentResponseData {
+	return apiServerDefinition.IncidentResponseData{
+		Id:          *i.ID,
 		DisplayName: i.DisplayName,
 		Description: i.Description,
 		BeganAt:     i.BeganAt,
 		EndedAt:     i.EndedAt,
-		Phase: &api.PhaseReference{
+		Phase: &apiServerDefinition.PhaseReference{
 			Generation: *i.PhaseGeneration,
 			Order:      *i.PhaseOrder,
 		},
@@ -39,23 +39,21 @@ func (i *Incident) ToAPIResponse() api.IncidentResponseData {
 	}
 }
 
-// GetImpactComponentList converts the Affects list to an [api.ImpactComponentList].
-func (i *Incident) GetImpactComponentList() *api.ImpactComponentList {
-	impacts := make(api.ImpactComponentList, len(*i.Affects))
+// GetImpactComponentList converts the Affects list to an [apiServerDefinition.ImpactComponentList].
+func (i *Incident) GetImpactComponentList() *apiServerDefinition.ImpactComponentList {
+	impacts := make(apiServerDefinition.ImpactComponentList, len(*i.Affects))
 
 	for impactIndex, impact := range *i.Affects {
-		componentID := impact.ComponentID.String()
-		typeID := impact.ImpactTypeID.String()
-		impacts[impactIndex].Reference = &componentID
-		impacts[impactIndex].Type = &typeID
+		impacts[impactIndex].Reference = impact.ComponentID
+		impacts[impactIndex].Type = impact.ImpactTypeID
 	}
 
 	return &impacts
 }
 
-// GetIncidentUpdates converts the Updates list to an [api.IncrementalList].
-func (i *Incident) GetIncidentUpdates() *api.IncrementalList {
-	updates := make(api.IncrementalList, len(*i.Updates))
+// GetIncidentUpdates converts the Updates list to an [apiServerDefinition.IncrementalList].
+func (i *Incident) GetIncidentUpdates() *apiServerDefinition.IncrementalList {
+	updates := make(apiServerDefinition.IncrementalList, len(*i.Updates))
 
 	for updateIndex, update := range *i.Updates {
 		updates[updateIndex] = *update.Order
@@ -65,7 +63,7 @@ func (i *Incident) GetIncidentUpdates() *api.IncrementalList {
 }
 
 // IncidentFromAPI creates an [Incident] from an API request.
-func IncidentFromAPI(incidentRequest *api.Incident) (*Incident, error) {
+func IncidentFromAPI(incidentRequest *apiServerDefinition.Incident) (*Incident, error) {
 	if incidentRequest == nil {
 		return nil, ErrEmptyValue
 	}
@@ -98,16 +96,16 @@ func IncidentFromAPI(incidentRequest *api.Incident) (*Incident, error) {
 
 // IncidentUpdate describes a action that changes the incident.
 type IncidentUpdate struct {
-	IncidentID  *ID              `gorm:"primaryKey"`
-	Order       *api.Incremental `gorm:"primaryKey"`
-	DisplayName *api.DisplayName
-	Description *api.Description
-	CreatedAt   *api.Date
+	IncidentID  *ID                              `gorm:"primaryKey"`
+	Order       *apiServerDefinition.Incremental `gorm:"primaryKey"`
+	DisplayName *apiServerDefinition.DisplayName
+	Description *apiServerDefinition.Description
+	CreatedAt   *apiServerDefinition.Date
 }
 
 // ToAPIResponse converts to API response.
-func (iu *IncidentUpdate) ToAPIResponse() api.IncidentUpdateResponseData {
-	return api.IncidentUpdateResponseData{
+func (iu *IncidentUpdate) ToAPIResponse() apiServerDefinition.IncidentUpdateResponseData {
+	return apiServerDefinition.IncidentUpdateResponseData{
 		Order:       *iu.Order,
 		DisplayName: iu.DisplayName,
 		Description: iu.Description,
@@ -117,7 +115,7 @@ func (iu *IncidentUpdate) ToAPIResponse() api.IncidentUpdateResponseData {
 
 // IncidentUpdateFromAPI creates an [IncidentUpdate] from an API request.
 func IncidentUpdateFromAPI(
-	incidentUpdateRequest *api.IncidentUpdate,
+	incidentUpdateRequest *apiServerDefinition.IncidentUpdate,
 	incidentID uuid.UUID,
 	order int,
 ) (*IncidentUpdate, error) {

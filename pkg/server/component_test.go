@@ -12,7 +12,7 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/ginkgo/v2"
@@ -117,8 +117,8 @@ var _ = Describe("Component", Ordered, func() {
 				// Arrange
 				sqlMock.ExpectQuery(expectedComponentsQuery).WillReturnRows(componentRows)
 
-				expectedResult, _ := json.Marshal(api.ComponentListResponse{
-					Data: []api.ComponentResponseData{},
+				expectedResult, _ := json.Marshal(apiServerDefinition.ComponentListResponse{
+					Data: []apiServerDefinition.ComponentResponseData{},
 				})
 
 				// Act
@@ -144,8 +144,8 @@ var _ = Describe("Component", Ordered, func() {
 					WithArgs(componentID).
 					WillReturnRows(impactRows, incidentRows)
 
-				expectedResult, _ := json.Marshal(api.ComponentListResponse{
-					Data: []api.ComponentResponseData{
+				expectedResult, _ := json.Marshal(apiServerDefinition.ComponentListResponse{
+					Data: []apiServerDefinition.ComponentResponseData{
 						component.ToAPIResponse(),
 					},
 				})
@@ -187,7 +187,7 @@ var _ = Describe("Component", Ordered, func() {
 				echoLogger,
 				http.MethodPost,
 				componentsEndpoint,
-				api.Component{
+				apiServerDefinition.Component{
 					DisplayName: test.Ptr("Storage"),
 				},
 			)
@@ -207,13 +207,9 @@ var _ = Describe("Component", Ordered, func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				// parse answer to get uuid
-				var response api.IdResponse
+				var response apiServerDefinition.IdResponse
 				err = json.Unmarshal(res.Body.Bytes(), &response)
 
-				Ω(err).ShouldNot(HaveOccurred())
-
-				// check valid uuid
-				_, err = uuid.Parse(response.Id)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(res.Code).Should(Equal(http.StatusCreated))
 			})
@@ -274,7 +270,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteComponent(ctx, componentID)
+				err := handlers.DeleteComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -291,7 +287,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteComponent(ctx, componentID)
+				err := handlers.DeleteComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -307,29 +303,11 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.DeleteComponent(ctx, componentID)
+				err := handlers.DeleteComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodDelete,
-					"/components/ABC-123",
-					nil,
-				)
-				// Act
-				err := handlers.DeleteComponent(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 	})
@@ -364,12 +342,12 @@ var _ = Describe("Component", Ordered, func() {
 					WithArgs(componentID).
 					WillReturnRows(impactRows, incidentRows)
 
-				expectedResult, _ := json.Marshal(api.ComponentResponse{
+				expectedResult, _ := json.Marshal(apiServerDefinition.ComponentResponse{
 					Data: component.ToAPIResponse(),
 				})
 
 				// Act
-				err := handlers.GetComponent(ctx, componentID)
+				err := handlers.GetComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -384,30 +362,11 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectQuery(expectedComponentQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetComponent(ctx, componentID)
+				err := handlers.GetComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodGet,
-					"/components/ABC-123",
-					nil,
-				)
-
-				// Act
-				err := handlers.GetComponent(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 
@@ -417,7 +376,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectQuery(expectedComponentQuery).WillReturnRows(componentRows)
 
 				// Act
-				err := handlers.GetComponent(ctx, componentID)
+				err := handlers.GetComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -438,7 +397,7 @@ var _ = Describe("Component", Ordered, func() {
 				echoLogger,
 				http.MethodPatch,
 				componentEndpoint,
-				api.Component{
+				apiServerDefinition.Component{
 					DisplayName: test.Ptr("Network"),
 				},
 			)
@@ -455,7 +414,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateComponent(ctx, componentID)
+				err := handlers.UpdateComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -475,28 +434,7 @@ var _ = Describe("Component", Ordered, func() {
 				)
 
 				// Act
-				err := handlers.UpdateComponent(ctx, componentID)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodPatch,
-					"/components/ABC-123",
-					api.Component{
-						DisplayName: test.Ptr("Network"),
-					},
-				)
-
-				// Act
-				err := handlers.UpdateComponent(ctx, "ABC-123")
+				err := handlers.UpdateComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -515,7 +453,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.UpdateComponent(ctx, componentID)
+				err := handlers.UpdateComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -534,7 +472,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateComponent(ctx, componentID)
+				err := handlers.UpdateComponent(ctx, componentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())

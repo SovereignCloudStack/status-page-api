@@ -1,23 +1,23 @@
 package db
 
-import "github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+import apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 
 // Severity represents a severity of a incident affecting a component.
 type Severity struct {
-	DisplayName *api.DisplayName   `yaml:"name"`
-	Value       *api.SeverityValue `grom:"type:smallint" yaml:"value"`
+	DisplayName *apiServerDefinition.DisplayName   `yaml:"name"`
+	Value       *apiServerDefinition.SeverityValue `grom:"type:smallint" yaml:"value"`
 }
 
 // ToAPIResponse converts to API response.
-func (s *Severity) ToAPIResponse() api.Severity {
-	return api.Severity{
+func (s *Severity) ToAPIResponse() apiServerDefinition.Severity {
+	return apiServerDefinition.Severity{
 		DisplayName: s.DisplayName,
 		Value:       s.Value,
 	}
 }
 
 // SeverityFromAPI creates a [Severity] from an API request.
-func SeverityFromAPI(severityRequest *api.SeverityRequest) (*Severity, error) {
+func SeverityFromAPI(severityRequest *apiServerDefinition.SeverityRequest) (*Severity, error) {
 	if severityRequest == nil {
 		return nil, ErrEmptyValue
 	}
@@ -29,7 +29,10 @@ func SeverityFromAPI(severityRequest *api.SeverityRequest) (*Severity, error) {
 }
 
 // NewSeverity checks the value and creates a new severity.
-func NewSeverity(displayName api.DisplayName, value api.SeverityValue) (*Severity, error) {
+func NewSeverity(
+	displayName apiServerDefinition.DisplayName,
+	value apiServerDefinition.SeverityValue,
+) (*Severity, error) {
 	if value < 0 || value > 100 {
 		return nil, ErrSeverityValueOutOfRange
 	}

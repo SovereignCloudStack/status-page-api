@@ -3,7 +3,7 @@ package swagger
 import (
 	"net/http"
 
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/labstack/echo/v4"
 )
 
@@ -50,7 +50,7 @@ func ServeSwagger(ctx echo.Context) error {
 
 // ServeOpenAPISpec decodes and serves the OpenAPI.json spec.
 func ServeOpenAPISpec(ctx echo.Context) error {
-	swagger, err := api.GetSwagger()
+	swagger, err := apiServerDefinition.GetSwagger()
 	if err != nil {
 		ctx.Logger().Error(err)
 

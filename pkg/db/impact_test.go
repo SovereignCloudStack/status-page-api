@@ -3,7 +3,7 @@ package db_test
 import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -26,8 +26,8 @@ var _ = Describe("ImpactType", func() {
 		Context("with valid data", func() {
 			It("should return the api response", func() {
 				// Arrange
-				expectedResult := api.ImpactTypeResponseData{
-					Id:          impactTypeID,
+				expectedResult := apiServerDefinition.ImpactTypeResponseData{
+					Id:          impactTypeUUID,
 					DisplayName: test.Ptr("Performance Degration"),
 					Description: test.Ptr("Performance has been down."),
 				}
@@ -45,7 +45,7 @@ var _ = Describe("ImpactType", func() {
 		Context("with valid data", func() {
 			It("should return the impact type", func() {
 				// Arrange
-				impactTypeRequest := &api.ImpactType{
+				impactTypeRequest := &apiServerDefinition.ImpactType{
 					DisplayName: test.Ptr("Performance Degration"),
 					Description: test.Ptr("Performance has been down."),
 				}
@@ -92,10 +92,10 @@ var _ = Describe("Impact", func() {
 		Context("with valid data", func() {
 			It("should return a impact list", func() {
 				// Arrange
-				incidentImpacts := &api.ImpactComponentList{
+				incidentImpacts := &apiServerDefinition.ImpactComponentList{
 					{
-						Reference: test.Ptr(componentID),
-						Type:      test.Ptr(impactTypeID),
+						Reference: &componentUUID,
+						Type:      &impactTypeUUID,
 						Severity:  test.Ptr(severity),
 					},
 				}

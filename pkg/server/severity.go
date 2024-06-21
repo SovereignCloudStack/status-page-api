@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
@@ -26,19 +26,19 @@ func (i *Implementation) GetSeverities(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	data := make([]api.Severity, len(severities))
+	data := make([]apiServerDefinition.Severity, len(severities))
 	for severityIndex, severity := range severities {
 		data[severityIndex] = severity.ToAPIResponse()
 	}
 
-	return ctx.JSON(http.StatusOK, api.SeverityListResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusOK, apiServerDefinition.SeverityListResponse{ //nolint:wrapcheck
 		Data: data,
 	})
 }
 
 // CreateSeverity handles creation of severities.
 func (i *Implementation) CreateSeverity(ctx echo.Context) error {
-	var request api.CreateSeverityJSONRequestBody
+	var request apiServerDefinition.CreateSeverityJSONRequestBody
 
 	logger := i.logger.With().Str("handler", "CreateSeverity").Logger()
 
@@ -49,7 +49,7 @@ func (i *Implementation) CreateSeverity(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	if request == (api.CreateSeverityJSONRequestBody{}) { //nolint: exhaustruct
+	if request == (apiServerDefinition.CreateSeverityJSONRequestBody{}) { //nolint: exhaustruct
 		logger.Warn().Msg("empty request")
 
 		return echo.ErrBadRequest
@@ -77,7 +77,10 @@ func (i *Implementation) CreateSeverity(ctx echo.Context) error {
 }
 
 // DeleteSeverity handles deletion of severities.
-func (i *Implementation) DeleteSeverity(ctx echo.Context, severityName api.SeverityNamePathParameter) error {
+func (i *Implementation) DeleteSeverity(
+	ctx echo.Context,
+	severityName apiServerDefinition.SeverityNamePathParameter,
+) error {
 	logger := i.logger.With().Str("handler", "DeleteSeverity").Str("name", severityName).Logger()
 	logger.Debug().Send()
 
@@ -100,7 +103,10 @@ func (i *Implementation) DeleteSeverity(ctx echo.Context, severityName api.Sever
 }
 
 // GetSeverity retrieves a specific incident by it's name.
-func (i *Implementation) GetSeverity(ctx echo.Context, severityName api.SeverityNamePathParameter) error {
+func (i *Implementation) GetSeverity( //nolint:dupl
+	ctx echo.Context,
+	severityName apiServerDefinition.SeverityNamePathParameter,
+) error {
 	var severity DbDef.Severity
 
 	logger := i.logger.With().Str("handler", "GetSeverity").Str("name", severityName).Logger()
@@ -121,14 +127,17 @@ func (i *Implementation) GetSeverity(ctx echo.Context, severityName api.Severity
 		return echo.ErrInternalServerError
 	}
 
-	return ctx.JSON(http.StatusOK, api.SeverityResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusOK, apiServerDefinition.SeverityResponse{ //nolint:wrapcheck
 		Data: severity.ToAPIResponse(),
 	})
 }
 
 // UpdateSeverity handles updates of severities.
-func (i *Implementation) UpdateSeverity(ctx echo.Context, severityName api.SeverityNamePathParameter) error {
-	var request api.UpdateSeverityJSONRequestBody
+func (i *Implementation) UpdateSeverity(
+	ctx echo.Context,
+	severityName apiServerDefinition.SeverityNamePathParameter,
+) error {
+	var request apiServerDefinition.UpdateSeverityJSONRequestBody
 
 	logger := i.logger.With().Str("handler", "UpdateSeverity").Str("name", severityName).Logger()
 
@@ -139,7 +148,7 @@ func (i *Implementation) UpdateSeverity(ctx echo.Context, severityName api.Sever
 		return echo.ErrInternalServerError
 	}
 
-	if request == (api.UpdateSeverityJSONRequestBody{}) { //nolint:exhaustruct
+	if request == (apiServerDefinition.UpdateSeverityJSONRequestBody{}) { //nolint:exhaustruct
 		logger.Warn().Msg("empty request")
 
 		return echo.ErrBadRequest

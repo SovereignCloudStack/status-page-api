@@ -3,7 +3,7 @@ package db_test
 import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -42,17 +42,17 @@ var _ = Describe("Component", func() {
 		Context("with valid data", func() {
 			It("should return the api response", func() {
 				// Arrange
-				expectedResult := api.ComponentResponseData{
-					ActivelyAffectedBy: &api.ImpactIncidentList{
+				expectedResult := apiServerDefinition.ComponentResponseData{
+					ActivelyAffectedBy: &apiServerDefinition.ImpactIncidentList{
 						{
-							Reference: test.Ptr(incidentID),
-							Type:      test.Ptr(impactTypeID),
+							Reference: &incidentUUID,
+							Type:      &impactTypeUUID,
 							Severity:  test.Ptr(impactSeverity),
 						},
 					},
 					DisplayName: test.Ptr("Storage"),
-					Id:          componentID,
-					Labels:      &api.Labels{"data-center": "west", "location": "germany"},
+					Id:          componentUUID,
+					Labels:      &apiServerDefinition.Labels{"data-center": "west", "location": "germany"},
 				}
 
 				// Act
@@ -68,10 +68,10 @@ var _ = Describe("Component", func() {
 		Context("with valid data", func() {
 			It("should return an impact list", func() {
 				// Arrange
-				expectedResult := &api.ImpactIncidentList{
+				expectedResult := &apiServerDefinition.ImpactIncidentList{
 					{
-						Reference: test.Ptr(incidentID),
-						Type:      test.Ptr(impactTypeID),
+						Reference: &incidentUUID,
+						Type:      &impactTypeUUID,
 						Severity:  test.Ptr(impactSeverity),
 					},
 				}
@@ -89,9 +89,10 @@ var _ = Describe("Component", func() {
 		Context("with valid data", func() {
 			It("should return a database component", func() {
 				// Arrange
-				componentRequest := &api.Component{ // ActivelyAffectedBy is read only and will never be part of a request.
+				componentRequest := &apiServerDefinition.Component{
+					// ActivelyAffectedBy is read only and will never be part of a request.
 					DisplayName: test.Ptr("Storage"),
-					Labels:      &api.Labels{"data-center": "west", "location": "germany"},
+					Labels:      &apiServerDefinition.Labels{"data-center": "west", "location": "germany"},
 				}
 
 				expectedResult := &db.Component{

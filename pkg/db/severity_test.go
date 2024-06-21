@@ -3,7 +3,7 @@ package db_test
 import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -60,7 +60,7 @@ var _ = Describe("Severity", func() {
 				// Arrange
 				severity, _ := db.NewSeverity("broken", 50)
 
-				expectedResult := api.Severity{
+				expectedResult := apiServerDefinition.Severity{
 					DisplayName: test.Ptr("broken"),
 					Value:       test.Ptr(50),
 				}
@@ -78,7 +78,7 @@ var _ = Describe("Severity", func() {
 		Context("with valid data", func() {
 			It("should return a database severity", func() {
 				// Arrange
-				severityRequest := &api.Severity{
+				severityRequest := &apiServerDefinition.Severity{
 					DisplayName: test.Ptr("broken"),
 					Value:       test.Ptr(50),
 				}

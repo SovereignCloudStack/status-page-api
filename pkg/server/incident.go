@@ -6,15 +6,14 @@ import (
 	"net/http"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
-	"github.com/google/uuid"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
 
 // GetIncidents retrieves a list of all active incidents between a start and end.
-func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsParams) error {
+func (i *Implementation) GetIncidents(ctx echo.Context, params apiServerDefinition.GetIncidentsParams) error {
 	var incidents []*DbDef.Incident
 
 	logger := i.logger.With().Str("handler", "GetIncidents").Logger()
@@ -56,19 +55,19 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params api.GetIncidentsP
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	data := make([]api.IncidentResponseData, len(incidents))
+	data := make([]apiServerDefinition.IncidentResponseData, len(incidents))
 	for incidentIndex, incident := range incidents {
 		data[incidentIndex] = incident.ToAPIResponse()
 	}
 
-	return ctx.JSON(http.StatusOK, api.IncidentListResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusOK, apiServerDefinition.IncidentListResponse{ //nolint:wrapcheck
 		Data: data,
 	})
 }
 
 // CreateIncident handles creation of incidents.
 func (i *Implementation) CreateIncident(ctx echo.Context) error {
-	var request api.CreateIncidentJSONRequestBody
+	var request apiServerDefinition.CreateIncidentJSONRequestBody
 
 	logger := i.logger.With().Str("handler", "CreateIncident").Logger()
 
@@ -79,7 +78,7 @@ func (i *Implementation) CreateIncident(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	if request == (api.CreateIncidentJSONRequestBody{}) { //nolint: exhaustruct
+	if request == (apiServerDefinition.CreateIncidentJSONRequestBody{}) { //nolint: exhaustruct
 		logger.Warn().Msg("empty request")
 
 		return echo.ErrBadRequest
@@ -103,29 +102,22 @@ func (i *Implementation) CreateIncident(ctx echo.Context) error {
 		return echo.ErrInternalServerError
 	}
 
-	return ctx.JSON(http.StatusCreated, api.IdResponse{ //nolint:wrapcheck
-		Id: incident.ID.String(),
+	return ctx.JSON(http.StatusCreated, apiServerDefinition.IdResponse{ //nolint:wrapcheck
+		Id: *incident.ID,
 	})
 }
 
 // DeleteIncident handles deletion of incidents.
-func (i *Implementation) DeleteIncident( //nolint:dupl
+func (i *Implementation) DeleteIncident(
 	ctx echo.Context,
-	incidentID api.IncidentIdPathParameter,
+	incidentID apiServerDefinition.IncidentIdPathParameter,
 ) error {
-	logger := i.logger.With().Str("handler", "DeleteIncident").Str("id", incidentID).Logger()
+	logger := i.logger.With().Str("handler", "DeleteIncident").Interface("id", incidentID).Logger()
 	logger.Debug().Send()
-
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing incident uuid")
-
-		return echo.ErrBadRequest
-	}
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Where("id = ?", incidentUUID).Delete(&DbDef.Incident{}) //nolint: exhaustruct
+	res := dbSession.Where("id = ?", incidentID).Delete(&DbDef.Incident{}) //nolint: exhaustruct
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error deleting incident")
 
@@ -142,25 +134,18 @@ func (i *Implementation) DeleteIncident( //nolint:dupl
 }
 
 // GetIncident retrieves a specific incident by ID.
-func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error {
+func (i *Implementation) GetIncident(ctx echo.Context, incidentID apiServerDefinition.IncidentIdPathParameter) error {
 	var incident DbDef.Incident
 
-	logger := i.logger.With().Str("handler", "GetIncident").Str("id", incidentID).Logger()
+	logger := i.logger.With().Str("handler", "GetIncident").Interface("id", incidentID).Logger()
 	logger.Debug().Send()
-
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing incident uuid")
-
-		return echo.ErrBadRequest
-	}
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
 	res := dbSession.
 		Preload("Affects.Component").
 		Preload(clause.Associations).
-		Where("id = ?", incidentUUID).
+		Where("id = ?", incidentID).
 		First(&incident)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
@@ -174,16 +159,19 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID string) error 
 		return echo.NewHTTPError(http.StatusInternalServerError)
 	}
 
-	return ctx.JSON(http.StatusOK, api.IncidentResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusOK, apiServerDefinition.IncidentResponse{ //nolint:wrapcheck
 		Data: incident.ToAPIResponse(),
 	})
 }
 
 // UpdateIncident handles updates of incidents.
-func (i *Implementation) UpdateIncident(ctx echo.Context, incidentID api.IncidentIdPathParameter) error {
-	var request api.UpdateIncidentJSONRequestBody
+func (i *Implementation) UpdateIncident(
+	ctx echo.Context,
+	incidentID apiServerDefinition.IncidentIdPathParameter,
+) error {
+	var request apiServerDefinition.UpdateIncidentJSONRequestBody
 
-	logger := i.logger.With().Str("handler", "UpdateIncident").Str("id", incidentID).Logger()
+	logger := i.logger.With().Str("handler", "UpdateIncident").Interface("id", incidentID).Logger()
 
 	err := ctx.Bind(&request)
 	if err != nil {
@@ -192,7 +180,7 @@ func (i *Implementation) UpdateIncident(ctx echo.Context, incidentID api.Inciden
 		return echo.ErrInternalServerError
 	}
 
-	if request == (api.UpdateIncidentJSONRequestBody{}) { //nolint:exhaustruct
+	if request == (apiServerDefinition.UpdateIncidentJSONRequestBody{}) { //nolint:exhaustruct
 		logger.Warn().Msg("empty request")
 
 		return echo.ErrBadRequest
@@ -207,14 +195,7 @@ func (i *Implementation) UpdateIncident(ctx echo.Context, incidentID api.Inciden
 		return echo.ErrBadRequest
 	}
 
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		logger.Error().Err(err).Msg("error parsing id")
-
-		return echo.ErrBadRequest
-	}
-
-	incident.ID = &incidentUUID
+	incident.ID = &incidentID
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
@@ -235,62 +216,54 @@ func (i *Implementation) UpdateIncident(ctx echo.Context, incidentID api.Inciden
 }
 
 // GetIncidentUpdates retrieves a list of all updates for one incident.
-func (i *Implementation) GetIncidentUpdates(ctx echo.Context, incidentID api.IncidentIdPathParameter) error {
+func (i *Implementation) GetIncidentUpdates(
+	ctx echo.Context,
+	incidentID apiServerDefinition.IncidentIdPathParameter,
+) error {
 	var incidentUpdates []DbDef.IncidentUpdate
 
-	logger := i.logger.With().Str("handler", "GetIncidentUpdates").Str("id", incidentID).Logger()
+	logger := i.logger.With().Str("handler", "GetIncidentUpdates").Interface("id", incidentID).Logger()
 	logger.Debug().Send()
-
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing incident uuid")
-
-		return echo.ErrBadRequest
-	}
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Where("incident_id = ?", incidentUUID).Find(&incidentUpdates)
+	res := dbSession.Where("incident_id = ?", incidentID).Find(&incidentUpdates)
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error loading incident updates")
 
 		return echo.ErrInternalServerError
 	}
 
-	data := make([]api.IncidentUpdateResponseData, len(incidentUpdates))
+	data := make([]apiServerDefinition.IncidentUpdateResponseData, len(incidentUpdates))
 	for incidentUpdateIndex, incidentUpdate := range incidentUpdates {
 		data[incidentUpdateIndex] = incidentUpdate.ToAPIResponse()
 	}
 
-	return ctx.JSON(http.StatusOK, api.IncidentUpdateListResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusOK, apiServerDefinition.IncidentUpdateListResponse{ //nolint:wrapcheck
 		Data: data,
 	})
 }
 
 // CreateIncidentUpdate handles updates to an update for one incident.
-func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.IncidentIdPathParameter) error { //nolint:funlen,lll
+func (i *Implementation) CreateIncidentUpdate( //nolint:funlen
+	ctx echo.Context,
+	incidentID apiServerDefinition.IncidentIdPathParameter,
+) error {
 	var (
-		request api.CreateIncidentUpdateJSONRequestBody
+		request apiServerDefinition.CreateIncidentUpdateJSONRequestBody
 		order   int
 	)
 
-	logger := i.logger.With().Str("handler", "CreateIncidentUpdate").Str("id", incidentID).Logger()
+	logger := i.logger.With().Str("handler", "CreateIncidentUpdate").Interface("id", incidentID).Logger()
 
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing incident uuid")
-
-		return echo.ErrBadRequest
-	}
-
-	err = ctx.Bind(&request)
+	err := ctx.Bind(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error binding request")
 
 		return echo.ErrInternalServerError
 	}
 
-	if request == (api.CreateIncidentUpdateJSONRequestBody{}) { //nolint: exhaustruct
+	if request == (apiServerDefinition.CreateIncidentUpdateJSONRequestBody{}) { //nolint: exhaustruct
 		logger.Warn().Msg("empty request")
 
 		return echo.ErrBadRequest
@@ -304,7 +277,7 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 			transactionErr error
 		)
 
-		order, transactionErr = DbDef.GetHighestIncidentUpdateOrder(dbTx, incidentUUID)
+		order, transactionErr = DbDef.GetHighestIncidentUpdateOrder(dbTx, incidentID)
 		if transactionErr != nil {
 			return fmt.Errorf("error getting current highest order of incident: %w", transactionErr)
 		}
@@ -313,7 +286,7 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 
 		logger.Debug().Interface("request", request).Int("order", order).Send()
 
-		incidentUpdate, transactionErr = DbDef.IncidentUpdateFromAPI(&request, incidentUUID, order)
+		incidentUpdate, transactionErr = DbDef.IncidentUpdateFromAPI(&request, incidentID, order)
 		if transactionErr != nil {
 			return fmt.Errorf("error parsing request: %w", transactionErr)
 		}
@@ -331,7 +304,7 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 		return echo.ErrInternalServerError
 	}
 
-	return ctx.JSON(http.StatusCreated, api.OrderResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusCreated, apiServerDefinition.OrderResponse{ //nolint:wrapcheck
 		Order: order,
 	})
 }
@@ -339,27 +312,20 @@ func (i *Implementation) CreateIncidentUpdate(ctx echo.Context, incidentID api.I
 // DeleteIncidentUpdate handles deletion of an update for one incident.
 func (i *Implementation) DeleteIncidentUpdate(
 	ctx echo.Context,
-	incidentID api.IncidentIdPathParameter,
-	incidentUpdateOrder api.IncidentUpdateOrderPathParameter,
+	incidentID apiServerDefinition.IncidentIdPathParameter,
+	incidentUpdateOrder apiServerDefinition.IncidentUpdateOrderPathParameter,
 ) error {
 	logger := i.logger.With().
 		Str("handler", "DeleteIncidentUpdate").
-		Str("id", incidentID).
+		Interface("id", incidentID).
 		Int("order", incidentUpdateOrder).
 		Logger()
 	logger.Debug().Send()
 
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing incident uuid")
-
-		return echo.ErrBadRequest
-	}
-
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
 	res := dbSession.
-		Where("incident_id = ?", incidentUUID).
+		Where("incident_id = ?", incidentID).
 		Where("\"order\" = ?", incidentUpdateOrder).
 		Delete(&DbDef.IncidentUpdate{}) //nolint: exhaustruct
 	if res.Error != nil {
@@ -380,29 +346,22 @@ func (i *Implementation) DeleteIncidentUpdate(
 // GetIncidentUpdate retrieves a specific update for one incident.
 func (i *Implementation) GetIncidentUpdate(
 	ctx echo.Context,
-	incidentID api.IncidentIdPathParameter,
-	incidentUpdateOrder api.IncidentUpdateOrderPathParameter,
+	incidentID apiServerDefinition.IncidentIdPathParameter,
+	incidentUpdateOrder apiServerDefinition.IncidentUpdateOrderPathParameter,
 ) error {
 	var incidentUpdate DbDef.IncidentUpdate
 
 	logger := i.logger.With().
 		Str("handler", "GetIncidentUpdate").
-		Str("id", incidentID).
+		Interface("id", incidentID).
 		Int("order", incidentUpdateOrder).
 		Logger()
 	logger.Debug().Send()
 
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing incident uuid")
-
-		return echo.ErrBadRequest
-	}
-
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
 	res := dbSession.
-		Where("incident_id = ?", incidentUUID).
+		Where("incident_id = ?", incidentID).
 		Where("\"order\" = ?", incidentUpdateOrder).
 		First(&incidentUpdate)
 	if res.Error != nil {
@@ -417,7 +376,7 @@ func (i *Implementation) GetIncidentUpdate(
 		return echo.ErrInternalServerError
 	}
 
-	return ctx.JSON(http.StatusOK, api.IncidentUpdateResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusOK, apiServerDefinition.IncidentUpdateResponse{ //nolint:wrapcheck
 		Data: incidentUpdate.ToAPIResponse(),
 	})
 }
@@ -425,32 +384,25 @@ func (i *Implementation) GetIncidentUpdate(
 // UpdateIncidentUpdate handles updates of updates for one incident.
 func (i *Implementation) UpdateIncidentUpdate(
 	ctx echo.Context,
-	incidentID api.IncidentIdPathParameter,
-	incidentUpdateOrder api.IncidentUpdateOrderPathParameter,
+	incidentID apiServerDefinition.IncidentIdPathParameter,
+	incidentUpdateOrder apiServerDefinition.IncidentUpdateOrderPathParameter,
 ) error {
-	var request api.UpdateIncidentUpdateJSONRequestBody
+	var request apiServerDefinition.UpdateIncidentUpdateJSONRequestBody
 
 	logger := i.logger.With().
 		Str("handler", "UpdateIncidentUpdate").
-		Str("id", incidentID).
+		Interface("id", incidentID).
 		Int("order", incidentUpdateOrder).
 		Logger()
 
-	incidentUUID, err := uuid.Parse(incidentID)
-	if err != nil {
-		logger.Warn().Err(err).Msg("error parsing incident uuid")
-
-		return echo.ErrBadRequest
-	}
-
-	err = ctx.Bind(&request)
+	err := ctx.Bind(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error binding request")
 
 		return echo.ErrInternalServerError
 	}
 
-	if request == (api.CreateIncidentUpdateJSONRequestBody{}) { //nolint: exhaustruct
+	if request == (apiServerDefinition.CreateIncidentUpdateJSONRequestBody{}) { //nolint: exhaustruct
 		logger.Warn().Msg("empty request")
 
 		return echo.ErrBadRequest
@@ -460,7 +412,7 @@ func (i *Implementation) UpdateIncidentUpdate(
 		Interface("request", request).
 		Send()
 
-	incidentUpdate, err := DbDef.IncidentUpdateFromAPI(&request, incidentUUID, incidentUpdateOrder)
+	incidentUpdate, err := DbDef.IncidentUpdateFromAPI(&request, incidentID, incidentUpdateOrder)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
 

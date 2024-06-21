@@ -12,7 +12,7 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -103,7 +103,7 @@ var _ = Describe("Phase", Ordered, func() {
 			ctx echo.Context
 			res *httptest.ResponseRecorder
 
-			getPhaseListParams = api.GetPhaseListParams{}
+			getPhaseListParams = apiServerDefinition.GetPhaseListParams{}
 		)
 
 		BeforeEach(func() {
@@ -126,10 +126,10 @@ var _ = Describe("Phase", Ordered, func() {
 				sqlMock.ExpectQuery(expectedPhaseListQuery).WillReturnRows(phaseRows)
 				sqlMock.ExpectCommit()
 
-				expectedResult, _ := json.Marshal(api.PhaseListResponse{
-					Data: api.PhaseListResponseData{
+				expectedResult, _ := json.Marshal(apiServerDefinition.PhaseListResponse{
+					Data: apiServerDefinition.PhaseListResponseData{
 						Generation: phaseGeneration,
-						Phases:     []api.Phase{},
+						Phases:     []apiServerDefinition.Phase{},
 					},
 				})
 
@@ -163,14 +163,14 @@ var _ = Describe("Phase", Ordered, func() {
 					sqlMock.ExpectQuery(expectedPhaseListQuery).WillReturnRows(phaseRows)
 					sqlMock.ExpectCommit()
 
-					getPhaseListParamsGivenValidGeneration := api.GetPhaseListParams{
+					getPhaseListParamsGivenValidGeneration := apiServerDefinition.GetPhaseListParams{
 						Generation: test.Ptr(1),
 					}
 
-					expectedResult, _ := json.Marshal(api.PhaseListResponse{
-						Data: api.PhaseListResponseData{
+					expectedResult, _ := json.Marshal(apiServerDefinition.PhaseListResponse{
+						Data: apiServerDefinition.PhaseListResponseData{
 							Generation: phaseGeneration,
-							Phases: []api.Phase{
+							Phases: []apiServerDefinition.Phase{
 								*phases[0].Name,
 								*phases[1].Name,
 								*phases[2].Name,
@@ -200,10 +200,10 @@ var _ = Describe("Phase", Ordered, func() {
 					sqlMock.ExpectQuery(expectedPhaseListQuery).WillReturnRows(phaseRows)
 					sqlMock.ExpectCommit()
 
-					expectedResult, _ := json.Marshal(api.PhaseListResponse{
-						Data: api.PhaseListResponseData{
+					expectedResult, _ := json.Marshal(apiServerDefinition.PhaseListResponse{
+						Data: apiServerDefinition.PhaseListResponseData{
 							Generation: phaseGeneration,
-							Phases: []api.Phase{
+							Phases: []apiServerDefinition.Phase{
 								*phases[0].Name,
 								*phases[1].Name,
 								*phases[2].Name,
@@ -233,7 +233,7 @@ var _ = Describe("Phase", Ordered, func() {
 					WillReturnRows(lastPhaseGenerationRows.AddRow(phaseGeneration))
 				sqlMock.ExpectRollback()
 
-				getPhaseListParamsGivenInvalidGeneration := api.GetPhaseListParams{
+				getPhaseListParamsGivenInvalidGeneration := apiServerDefinition.GetPhaseListParams{
 					Generation: test.Ptr(-1),
 				}
 
@@ -255,7 +255,7 @@ var _ = Describe("Phase", Ordered, func() {
 					WillReturnRows(lastPhaseGenerationRows.AddRow(phaseGeneration))
 				sqlMock.ExpectRollback()
 
-				getPhaseListParamsGivenLargeGeneration := api.GetPhaseListParams{
+				getPhaseListParamsGivenLargeGeneration := apiServerDefinition.GetPhaseListParams{
 					Generation: test.Ptr(15),
 				}
 
@@ -319,7 +319,7 @@ var _ = Describe("Phase", Ordered, func() {
 				echoLogger,
 				http.MethodPost,
 				"/phases",
-				api.PhaseList{
+				apiServerDefinition.PhaseList{
 					Phases: []string{"Phase 1", "Phase 2", "Phase 3"},
 				},
 			)
@@ -345,7 +345,7 @@ var _ = Describe("Phase", Ordered, func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				// parse answer to get generation
-				var response api.GenerationResponse
+				var response apiServerDefinition.GenerationResponse
 				err = json.Unmarshal(res.Body.Bytes(), &response)
 
 				Ω(err).ShouldNot(HaveOccurred())
