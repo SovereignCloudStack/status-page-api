@@ -13,7 +13,7 @@ Changeing the listining address to `localhost:3001`.
 #### Flags
 
 ```bash
-./bin/status-page-api --listen-address :3001
+./bin/status-page-api --server-listen-address :3001
 ```
 
 #### Environment
@@ -21,7 +21,7 @@ Changeing the listining address to `localhost:3001`.
 Every config key is prefixed by `STATUS_PAGE`.
 
 ```bash
-STATUS_PAGE_LISTEN_ADDRESS=:3001 ./bin/status-page-api
+STATUS_PAGE_SERVER_LISTEN_ADDRESS=:3001 ./bin/status-page-api
 ```
 
 ### Verbosity
@@ -46,14 +46,15 @@ Create `secrets.env` for config:
 ```env
 STATUS_PAGE_VERBOSE=3
 STATUS_PAGE_SWAGGER_UI_ENABLED=true
-STATUS_PAGE_LISTEN_ADDRESS=:3000
-STATUS_PAGE_CORS_ORIGINS="localhost 127.0.0.1"
+STATUS_PAGE_SERVER_LISTEN_ADDRESS=:3000
+STATUS_PAGE_SERVER_CORS_ORIGINS="localhost 127.0.0.1"
 STATUS_PAGE_DATABASE_CONNECTION_STRING="host=127.0.0.1 user=postgres dbname=postgres port=5432 password=debug sslmode=disable"
 STATUS_PAGE_PROVISIONING_FILE=./provisioning.yaml
-
 ```
 
-`STATUS_PAGE_SWAGGER_UI_ENABLED` enables the [Swagger Web UI](https://swagger.io/tools/swagger-ui/) for local debugging purposes, which is disabled by default.
+`STATUS_PAGE_SERVER_SWAGGER_UI_ENABLED` enables the [Swagger Web UI](https://swagger.io/tools/swagger-ui/) for local debugging purposes, which is disabled by default.
+
+`STATUS_PAGE_METRICS_ADDRESS=:9000` enables the `/metrics` endpoint on the configured port for Prometheus scraping.
 
 ### Note
 
