@@ -6,7 +6,7 @@ WORKDIR /build
 
 COPY . .
 
-RUN go build -o status-page-api cmd/status-page-api/main.go
+RUN go build -ldflags "-s -w" -o status-page-api cmd/status-page-api/main.go
 
 FROM docker.io/alpine:3.20
 

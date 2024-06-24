@@ -5,7 +5,7 @@ import (
 
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -40,7 +40,7 @@ var _ = Describe("Incident", func() {
 
 		incident = db.Incident{
 			Model: db.Model{
-				ID: &incidentUUID,
+				ID: incidentUUID,
 			},
 			DisplayName: test.Ptr("Disk incident"),
 			Description: test.Ptr("Disk performance decrease."),
@@ -76,23 +76,23 @@ var _ = Describe("Incident", func() {
 		Context("with valid data", func() {
 			It("should return the api response", func() {
 				// Arrange
-				expectedResult := api.IncidentResponseData{
-					Affects: &api.ImpactComponentList{
+				expectedResult := apiServerDefinition.IncidentResponseData{
+					Affects: &apiServerDefinition.ImpactComponentList{
 						{
-							Reference: test.Ptr(componentID),
-							Type:      test.Ptr(impactTypeID),
+							Reference: &componentUUID,
+							Type:      &impactTypeUUID,
 						},
 					},
 					BeganAt:     &beganAt,
 					DisplayName: test.Ptr("Disk incident"),
 					Description: test.Ptr("Disk performance decrease."),
 					EndedAt:     &endedAt,
-					Id:          incidentID,
-					Phase: &api.PhaseReference{
+					Id:          incidentUUID,
+					Phase: &apiServerDefinition.PhaseReference{
 						Generation: phaseGeneration,
 						Order:      phaseOrder,
 					},
-					Updates: &api.IncrementalList{
+					Updates: &apiServerDefinition.IncrementalList{
 						incidentUpdateOrder,
 					},
 				}
@@ -110,10 +110,10 @@ var _ = Describe("Incident", func() {
 		Context("with valid data", func() {
 			It("should return a list of impacts", func() {
 				// Arrange
-				expectedResult := &api.ImpactComponentList{
+				expectedResult := &apiServerDefinition.ImpactComponentList{
 					{
-						Reference: test.Ptr(componentID),
-						Type:      test.Ptr(impactTypeID),
+						Reference: &componentUUID,
+						Type:      &impactTypeUUID,
 					},
 				}
 
@@ -130,7 +130,7 @@ var _ = Describe("Incident", func() {
 		Context("with valid data", func() {
 			It("should return a list of incident updates", func() {
 				// Arrange
-				expectedResult := &api.IncrementalList{
+				expectedResult := &apiServerDefinition.IncrementalList{
 					incidentUpdateOrder,
 				}
 
@@ -147,22 +147,22 @@ var _ = Describe("Incident", func() {
 		Context("with valid data", func() {
 			It("should return a incident", func() {
 				// Arrange
-				incidentRequest := &api.Incident{
-					Affects: &api.ImpactComponentList{
+				incidentRequest := &apiServerDefinition.Incident{
+					Affects: &apiServerDefinition.ImpactComponentList{
 						{
-							Reference: test.Ptr(componentID),
-							Type:      test.Ptr(impactTypeID),
+							Reference: &componentUUID,
+							Type:      &impactTypeUUID,
 						},
 					},
 					BeganAt:     &beganAt,
 					DisplayName: test.Ptr("Disk incident"),
 					Description: test.Ptr("Disk performance decrease."),
 					EndedAt:     &endedAt,
-					Phase: &api.PhaseReference{
+					Phase: &apiServerDefinition.PhaseReference{
 						Generation: phaseGeneration,
 						Order:      phaseOrder,
 					},
-					Updates: &api.IncrementalList{
+					Updates: &apiServerDefinition.IncrementalList{
 						incidentUpdateOrder,
 					},
 				}
@@ -221,7 +221,7 @@ var _ = Describe("IncidentUpdate", func() {
 		Context("with valid data", func() {
 			It("should return the api response", func() {
 				// Arrange
-				expectedResult := api.IncidentUpdateResponseData{
+				expectedResult := apiServerDefinition.IncidentUpdateResponseData{
 					CreatedAt:   &updateCreated,
 					DisplayName: test.Ptr("Investigation started"),
 					Description: test.Ptr("We started to investigate the issue."),
@@ -241,7 +241,7 @@ var _ = Describe("IncidentUpdate", func() {
 		Context("with valid data", func() {
 			It("should return a incident update", func() {
 				// Arrange
-				incidentUpdateRequest := &api.IncidentUpdate{
+				incidentUpdateRequest := &apiServerDefinition.IncidentUpdate{
 					CreatedAt:   &updateCreated,
 					DisplayName: test.Ptr("Investigation started"),
 					Description: test.Ptr("We started to investigate the issue."),

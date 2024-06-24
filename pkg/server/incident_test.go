@@ -3,7 +3,6 @@ package server_test
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -15,7 +14,7 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
 	"github.com/SovereignCloudStack/status-page-api/pkg/server"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	. "github.com/onsi/ginkgo/v2"
@@ -63,7 +62,7 @@ var _ = Describe("Incident", func() {
 		expectedIncidentQuery = regexp.
 					QuoteMeta(`SELECT * FROM "incidents" WHERE id = $1 ORDER BY "incidents"."id" LIMIT $2`)
 		expectedIncidentInsert = regexp.
-					QuoteMeta(`INSERT INTO "incidents" ("id","display_name","description","began_at","ended_at","phase_generation","phase_order") VALUES ($1,$2,$3,$4,$5,$6,$7)`) //nolint:lll
+					QuoteMeta(`INSERT INTO "incidents" ("display_name","description","began_at","ended_at","phase_generation","phase_order","id") VALUES ($1,$2,$3,$4,$5,$6,$7)`) //nolint:lll
 		expectedIncidentDelete = regexp.
 					QuoteMeta(`DELETE FROM "incidents" WHERE id = $1`)
 		expectedIncidentUpdate = regexp.
@@ -81,7 +80,7 @@ var _ = Describe("Incident", func() {
 		// filled test incident
 		incident = db.Incident{
 			Model: db.Model{
-				ID: &incidentUUID,
+				ID: incidentUUID,
 			},
 			DisplayName:     test.Ptr("Disk impact"),
 			Description:     test.Ptr("Disk IO low"),
@@ -129,7 +128,7 @@ var _ = Describe("Incident", func() {
 			res               *httptest.ResponseRecorder
 			startTime         = now.Add(-10 * time.Minute) // 10 minutes ago
 			endTime           = now.Add(5 * time.Minute)   // in 5 minutes
-			getIncidentParams = api.GetIncidentsParams{
+			getIncidentParams = apiServerDefinition.GetIncidentsParams{
 				Start: startTime,
 				End:   endTime,
 			}
@@ -153,8 +152,8 @@ var _ = Describe("Incident", func() {
 					WithArgs(startTime, startTime, endTime, endTime, endTime).
 					WillReturnRows(incidentRows)
 
-				expectedResult, _ := json.Marshal(api.IncidentListResponse{
-					Data: []api.IncidentResponseData{},
+				expectedResult, _ := json.Marshal(apiServerDefinition.IncidentListResponse{
+					Data: []apiServerDefinition.IncidentResponseData{},
 				})
 
 				// Act
@@ -197,8 +196,8 @@ var _ = Describe("Incident", func() {
 					WithArgs(incidentID).
 					WillReturnRows(incidentUpdateRows)
 
-				expectedResult, _ := json.Marshal(api.IncidentListResponse{
-					Data: []api.IncidentResponseData{
+				expectedResult, _ := json.Marshal(apiServerDefinition.IncidentListResponse{
+					Data: []apiServerDefinition.IncidentResponseData{
 						incident.ToAPIResponse(),
 					},
 				})
@@ -224,7 +223,7 @@ var _ = Describe("Incident", func() {
 						nil,
 					)
 
-					getIncidentParamsMissingStart := api.GetIncidentsParams{
+					getIncidentParamsMissingStart := apiServerDefinition.GetIncidentsParams{
 						End: endTime,
 					}
 
@@ -247,7 +246,7 @@ var _ = Describe("Incident", func() {
 						nil,
 					)
 
-					getIncidentParamsMissingEnd := api.GetIncidentsParams{
+					getIncidentParamsMissingEnd := apiServerDefinition.GetIncidentsParams{
 						Start: startTime,
 					}
 
@@ -270,7 +269,7 @@ var _ = Describe("Incident", func() {
 						nil,
 					)
 
-					getIncidentParamsStartEndSwapped := api.GetIncidentsParams{
+					getIncidentParamsStartEndSwapped := apiServerDefinition.GetIncidentsParams{
 						Start: endTime,
 						End:   startTime,
 					}
@@ -312,7 +311,7 @@ var _ = Describe("Incident", func() {
 				echoLogger,
 				http.MethodPost,
 				incidentsEndpoint,
-				api.Incident{
+				apiServerDefinition.Incident{
 					DisplayName: test.Ptr("Disk impact"),
 				},
 			)
@@ -334,13 +333,9 @@ var _ = Describe("Incident", func() {
 				Ω(err).ShouldNot(HaveOccurred())
 
 				// parse answer to get uuid
-				var response api.IdResponse
+				var response apiServerDefinition.IdResponse
 				err = json.Unmarshal(res.Body.Bytes(), &response)
 
-				Ω(err).ShouldNot(HaveOccurred())
-
-				// check valid uuid
-				_, err = uuid.Parse(response.Id)
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(res.Code).Should(Equal(http.StatusCreated))
 			})
@@ -375,27 +370,6 @@ var _ = Describe("Incident", func() {
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
 			})
 		})
-
-		Context("with invalid request", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(echoLogger, http.MethodPost, incidentsEndpoint, api.Incident{
-					DisplayName: test.Ptr("Disk impact"),
-					Affects: &api.ImpactComponentList{
-						{
-							Reference: test.Ptr("ABC"), // invalid UUID
-						},
-					},
-				})
-
-				// Act
-				err := handlers.CreateIncident(ctx)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
 	})
 
 	Describe("DeleteIncident", func() {
@@ -422,7 +396,7 @@ var _ = Describe("Incident", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteIncident(ctx, incidentID)
+				err := handlers.DeleteIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -439,7 +413,7 @@ var _ = Describe("Incident", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteIncident(ctx, incidentID)
+				err := handlers.DeleteIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -455,29 +429,11 @@ var _ = Describe("Incident", func() {
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.DeleteIncident(ctx, incidentID)
+				err := handlers.DeleteIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodDelete,
-					"/incidents/ABC-123",
-					nil,
-				)
-				// Act
-				err := handlers.DeleteIncident(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 	})
@@ -528,12 +484,12 @@ var _ = Describe("Incident", func() {
 					WithArgs(incidentID).
 					WillReturnRows(incidentUpdateRows)
 
-				expectedResult, _ := json.Marshal(api.IncidentResponse{
+				expectedResult, _ := json.Marshal(apiServerDefinition.IncidentResponse{
 					Data: incident.ToAPIResponse(),
 				})
 
 				// Act
-				err := handlers.GetIncident(ctx, incidentID)
+				err := handlers.GetIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -548,30 +504,11 @@ var _ = Describe("Incident", func() {
 				sqlMock.ExpectQuery(expectedIncidentQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetIncident(ctx, incidentID)
+				err := handlers.GetIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodGet,
-					"/incidents/ABC-123",
-					nil,
-				)
-
-				// Act
-				err := handlers.GetIncident(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 
@@ -581,7 +518,7 @@ var _ = Describe("Incident", func() {
 				sqlMock.ExpectQuery(expectedIncidentQuery).WillReturnRows(incidentRows)
 
 				// Act
-				err := handlers.GetIncident(ctx, incidentID)
+				err := handlers.GetIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -602,7 +539,7 @@ var _ = Describe("Incident", func() {
 				echoLogger,
 				http.MethodPatch,
 				incidentEndpoint,
-				api.Incident{
+				apiServerDefinition.Incident{
 					DisplayName: test.Ptr("Network impact"),
 				},
 			)
@@ -619,7 +556,7 @@ var _ = Describe("Incident", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateIncident(ctx, incidentID)
+				err := handlers.UpdateIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -639,28 +576,7 @@ var _ = Describe("Incident", func() {
 				)
 
 				// Act
-				err := handlers.UpdateIncident(ctx, incidentID)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
-
-		Context("with invalid UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodPatch,
-					"/incidents/ABC-123",
-					api.Incident{
-						DisplayName: test.Ptr("Network impact"),
-					},
-				)
-
-				// Act
-				err := handlers.UpdateIncident(ctx, "ABC-123")
+				err := handlers.UpdateIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -679,7 +595,7 @@ var _ = Describe("Incident", func() {
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.UpdateIncident(ctx, incidentID)
+				err := handlers.UpdateIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -698,37 +614,11 @@ var _ = Describe("Incident", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateIncident(ctx, incidentID)
+				err := handlers.UpdateIncident(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrNotFound))
-			})
-		})
-
-		Context("with invalid request", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, _ = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodPatch,
-					incidentEndpoint,
-					api.Incident{
-						DisplayName: test.Ptr("Disk impact"),
-						Affects: &api.ImpactComponentList{
-							{
-								Reference: test.Ptr("ABC"), // invalid UUID
-							},
-						},
-					},
-				)
-
-				// Act
-				err := handlers.UpdateIncident(ctx, incidentID)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 	})
@@ -812,12 +702,12 @@ var _ = Describe("IncidentUpdate", func() {
 				// Arrange
 				sqlMock.ExpectQuery(expectedIncidentUpdatesQuery).WillReturnRows(incidentUpdateRows)
 
-				expectedResult, _ := json.Marshal(api.IncidentUpdateListResponse{
-					Data: []api.IncidentUpdateResponseData{},
+				expectedResult, _ := json.Marshal(apiServerDefinition.IncidentUpdateListResponse{
+					Data: []apiServerDefinition.IncidentUpdateResponseData{},
 				})
 
 				// Act
-				err := handlers.GetIncidentUpdates(ctx, incidentID)
+				err := handlers.GetIncidentUpdates(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -841,38 +731,19 @@ var _ = Describe("IncidentUpdate", func() {
 						),
 					)
 
-				expectedResult, _ := json.Marshal(api.IncidentUpdateListResponse{
-					Data: []api.IncidentUpdateResponseData{
+				expectedResult, _ := json.Marshal(apiServerDefinition.IncidentUpdateListResponse{
+					Data: []apiServerDefinition.IncidentUpdateResponseData{
 						incidentUpdate.ToAPIResponse(),
 					},
 				})
 
 				// Act
-				err := handlers.GetIncidentUpdates(ctx, incidentID)
+				err := handlers.GetIncidentUpdates(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
 				Ω(res.Code).Should(Equal(http.StatusOK))
 				Ω(strings.Trim(res.Body.String(), "\n")).Should(Equal(string(expectedResult)))
-			})
-		})
-
-		Context("with invalid incident UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodGet,
-					"/incident/ABC-123/updates",
-					nil,
-				)
-
-				// Act
-				err := handlers.GetIncidentUpdates(ctx, "ABC-123")
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 
@@ -882,7 +753,7 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectQuery(expectedIncidentUpdatesQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetIncidentUpdates(ctx, incidentID)
+				err := handlers.GetIncidentUpdates(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -903,7 +774,7 @@ var _ = Describe("IncidentUpdate", func() {
 				echoLogger,
 				http.MethodPost,
 				incidentUpdatesEndpoint,
-				api.IncidentUpdate{
+				apiServerDefinition.IncidentUpdate{
 					DisplayName: test.Ptr("Investigation started"),
 					Description: test.Ptr("We started to investigate the impact."),
 				},
@@ -926,13 +797,13 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.CreateIncidentUpdate(ctx, incidentID)
+				err := handlers.CreateIncidentUpdate(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
 
 				// parse answer to get order
-				var response api.OrderResponse
+				var response apiServerDefinition.OrderResponse
 				err = json.Unmarshal(res.Body.Bytes(), &response)
 
 				Ω(err).ShouldNot(HaveOccurred())
@@ -953,29 +824,7 @@ var _ = Describe("IncidentUpdate", func() {
 				)
 
 				// Act
-				err := handlers.CreateIncidentUpdate(ctx, incidentID)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
-
-		Context("with invalid incident UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodPost,
-					"/incidentupdates/ABC-123",
-					api.IncidentUpdate{
-						DisplayName: test.Ptr("Investigation started"),
-						Description: test.Ptr("We started to investigate the impact."),
-					},
-				)
-
-				// Act
-				err := handlers.CreateIncidentUpdate(ctx, "ABC-123")
+				err := handlers.CreateIncidentUpdate(ctx, incidentUUID)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -995,7 +844,7 @@ var _ = Describe("IncidentUpdate", func() {
 					sqlMock.ExpectRollback()
 
 					// Act
-					err := handlers.CreateIncidentUpdate(ctx, incidentID)
+					err := handlers.CreateIncidentUpdate(ctx, incidentUUID)
 
 					// Assert
 					Ω(err).Should(HaveOccurred())
@@ -1019,7 +868,7 @@ var _ = Describe("IncidentUpdate", func() {
 					sqlMock.ExpectRollback()
 
 					// Act
-					err := handlers.CreateIncidentUpdate(ctx, incidentID)
+					err := handlers.CreateIncidentUpdate(ctx, incidentUUID)
 
 					// Assert
 					Ω(err).Should(HaveOccurred())
@@ -1055,7 +904,7 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.DeleteIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -1075,7 +924,7 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.DeleteIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.DeleteIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -1094,29 +943,11 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.DeleteIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.DeleteIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
-			})
-		})
-
-		Context("with invalid incident UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodDelete,
-					fmt.Sprintf("/incident/ABC-123/updates/%d", incidentUpdateOrder),
-					nil,
-				)
-				// Act
-				err := handlers.DeleteIncidentUpdate(ctx, "ABC-123", incidentUpdateOrder)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 	})
@@ -1153,12 +984,12 @@ var _ = Describe("IncidentUpdate", func() {
 						),
 					)
 
-				expectedResult, _ := json.Marshal(api.IncidentUpdateResponse{
+				expectedResult, _ := json.Marshal(apiServerDefinition.IncidentUpdateResponse{
 					Data: incidentUpdate.ToAPIResponse(),
 				})
 
 				// Act
-				err := handlers.GetIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.GetIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -1176,30 +1007,11 @@ var _ = Describe("IncidentUpdate", func() {
 					WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.GetIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(echo.ErrInternalServerError))
-			})
-		})
-
-		Context("with invalid incident UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodGet,
-					fmt.Sprintf("/incident/ABC-123/updates/%d", incidentUpdateOrder),
-					nil,
-				)
-
-				// Act
-				err := handlers.GetIncidentUpdate(ctx, "ABC-123", incidentUpdateOrder)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
 			})
 		})
 
@@ -1209,7 +1021,7 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectQuery(expectedIncidentUpdateQuery).WillReturnRows(incidentUpdateRows)
 
 				// Act
-				err := handlers.GetIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.GetIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -1230,7 +1042,7 @@ var _ = Describe("IncidentUpdate", func() {
 				echoLogger,
 				http.MethodPatch,
 				incidentUpdateEndpoint,
-				api.IncidentUpdate{
+				apiServerDefinition.IncidentUpdate{
 					Description: test.Ptr("NIC was down"),
 				},
 			)
@@ -1247,7 +1059,7 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.UpdateIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -1267,28 +1079,7 @@ var _ = Describe("IncidentUpdate", func() {
 				)
 
 				// Act
-				err := handlers.UpdateIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
-
-				// Assert
-				Ω(err).Should(HaveOccurred())
-				Ω(err).Should(Equal(echo.ErrBadRequest))
-			})
-		})
-
-		Context("with invalid incident UUID", func() {
-			It("should return 400 bad request", func() {
-				// Arrange
-				ctx, res = test.MustCreateEchoContextAndResponseWriter(
-					echoLogger,
-					http.MethodPatch,
-					fmt.Sprintf("/incidentupdates/ABC-123/%d", incidentUpdateOrder),
-					api.IncidentUpdate{
-						Description: test.Ptr("NIC was down"),
-					},
-				)
-
-				// Act
-				err := handlers.UpdateIncidentUpdate(ctx, "ABC-123", incidentUpdateOrder)
+				err := handlers.UpdateIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -1307,7 +1098,7 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectRollback()
 
 				// Act
-				err := handlers.UpdateIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.UpdateIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -1326,7 +1117,7 @@ var _ = Describe("IncidentUpdate", func() {
 				sqlMock.ExpectCommit()
 
 				// Act
-				err := handlers.UpdateIncidentUpdate(ctx, incidentID, incidentUpdateOrder)
+				err := handlers.UpdateIncidentUpdate(ctx, incidentUUID, incidentUpdateOrder)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())

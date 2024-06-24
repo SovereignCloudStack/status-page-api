@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 )
 
 // Labels are metadata for components.
-type Labels api.Labels
+type Labels apiServerDefinition.Labels
 
 // Scan implements the [database/sql.Scanner] interface to correctly read data.
 func (l *Labels) Scan(value interface{}) error {

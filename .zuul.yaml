@@ -1,6 +1,6 @@
 ---
 - job:
-    name: golang-lint
+    name: scs-status-page-go-lint
     parent: golangci-lint
     nodeset:
       nodes:
@@ -12,7 +12,7 @@
       golangci_lint_options: --timeout 5m
 
 - job:
-    name: golang-test
+    name: scs-status-page-go-test
     parent: golang-go
     nodeset:
       nodes:
@@ -23,7 +23,7 @@
       go_version: 1.22.4
 
 - job:
-    name: golang-build
+    name: scs-status-page-go-build
     parent: golang-go
     nodeset:
       nodes:
@@ -39,6 +39,6 @@
     default-branch: main
     check:
       jobs:
-        - golang-lint
-        - golang-test
-        - golang-build
+        - scs-status-page-go-lint
+        - scs-status-page-go-test
+        - scs-status-page-go-build

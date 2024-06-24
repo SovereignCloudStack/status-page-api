@@ -2,7 +2,7 @@ package db_test
 
 import (
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -15,7 +15,7 @@ var _ = Describe("Phase", func() {
 				phaseGeneration := 0
 				phaseOrder := 0
 
-				request := &api.PhaseReference{
+				request := &apiServerDefinition.PhaseReference{
 					Generation: phaseGeneration,
 					Order:      phaseOrder,
 				}

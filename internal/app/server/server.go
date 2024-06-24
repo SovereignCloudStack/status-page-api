@@ -9,7 +9,7 @@ import (
 	"github.com/SovereignCloudStack/status-page-api/internal/app/config"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/logging"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/swagger"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/labstack/echo-contrib/echoprometheus"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -54,8 +54,8 @@ func New(conf *config.Server, logger *zerolog.Logger, promMiddlewareConfig echop
 }
 
 // RegisterAPI registers api spec and api implementation to the echo server.
-func (s *Server) RegisterAPI(apiImplementation api.ServerInterface) {
-	api.RegisterHandlers(s.echo, apiImplementation)
+func (s *Server) RegisterAPI(apiImplementation apiServerDefinition.ServerInterface) {
+	apiServerDefinition.RegisterHandlers(s.echo, apiImplementation)
 }
 
 // Start starts the wrapped echo server.

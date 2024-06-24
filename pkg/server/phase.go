@@ -6,16 +6,19 @@ import (
 	"net/http"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
-	"github.com/SovereignCloudStack/status-page-openapi/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 )
 
 // GetPhaseList retrieves a list of all phases.
-func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListParams) error { //nolint:funlen
+func (i *Implementation) GetPhaseList( //nolint:funlen
+	ctx echo.Context,
+	params apiServerDefinition.GetPhaseListParams,
+) error {
 	var (
 		generation int
-		data       []api.Phase
+		data       []apiServerDefinition.Phase
 	)
 
 	logger := i.logger.With().Str("handler", "GetPhaseList").Logger()
@@ -51,7 +54,7 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 			return fmt.Errorf("error loading phase list: %w", res.Error)
 		}
 
-		data = make([]api.Phase, len(phases))
+		data = make([]apiServerDefinition.Phase, len(phases))
 		for phaseIndex, phase := range phases {
 			data[phaseIndex] = *phase.Name
 		}
@@ -75,8 +78,8 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 		return echo.ErrInternalServerError
 	}
 
-	return ctx.JSON(http.StatusOK, api.PhaseListResponse{ //nolint:wrapcheck
-		Data: api.PhaseListResponseData{
+	return ctx.JSON(http.StatusOK, apiServerDefinition.PhaseListResponse{ //nolint:wrapcheck
+		Data: apiServerDefinition.PhaseListResponseData{
 			Generation: generation,
 			Phases:     data,
 		},
@@ -87,7 +90,7 @@ func (i *Implementation) GetPhaseList(ctx echo.Context, params api.GetPhaseListP
 func (i *Implementation) CreatePhaseList(ctx echo.Context) error { //nolint:funlen
 	var (
 		generation int
-		request    api.CreatePhaseListJSONRequestBody
+		request    apiServerDefinition.CreatePhaseListJSONRequestBody
 	)
 
 	logger := i.logger.With().Str("handler", "CreatePhaseList").Logger()
@@ -145,7 +148,7 @@ func (i *Implementation) CreatePhaseList(ctx echo.Context) error { //nolint:funl
 		return echo.ErrInternalServerError
 	}
 
-	return ctx.JSON(http.StatusCreated, api.GenerationResponse{ //nolint:wrapcheck
+	return ctx.JSON(http.StatusCreated, apiServerDefinition.GenerationResponse{ //nolint:wrapcheck
 		Generation: generation,
 	})
 }

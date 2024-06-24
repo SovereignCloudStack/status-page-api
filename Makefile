@@ -45,7 +45,7 @@ $(BIN_DIR):
 	@mkdir -p $@
 
 go-build: $(BIN_DIR)
-	go build -o $(BIN_DIR)/$(APP_NAME) $(CMD_DIR)/$(APP_NAME)/main.go
+	go build -ldflags "-s -w" -o $(BIN_DIR)/$(APP_NAME) $(CMD_DIR)/$(APP_NAME)/main.go
 
 ${DOC_DIR}:
 	mkdir -p ${DOC_DIR}
