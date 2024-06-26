@@ -7,7 +7,7 @@ Code to the configuration can be found at `internal/app/config/config.go`.
 | Environment key                        | Flag                         | Description                                  | Type         | Default              |
 | -------------------------------------- | ---------------------------- | -------------------------------------------- | ------------ | -------------------- |
 | **General settings**                   |                              |                                              |              |                      |
-| STATUS_PAGE_PROVISIONING-FILE          | --provisioning-file          | YAML file containing the initial values      | Path         | ./provisioning.yaml  |
+| STATUS_PAGE_PROVISIONING_FILE          | --provisioning-file          | YAML file containing the initial values      | Path         | ./provisioning.yaml  |
 | STATUS_PAGE_SHUTDOWN_TIMEOUT           | --shutdown-timeout           | Timeout to gracefully stop the server        | Duration     | 10s                  |
 | STATUS_PAGE_VERBOSE                    | -v / --verbose               | Increase log level                           | Counter      | 0                    |
 | **Server settings**                    |                              |                                              |              |                      |
