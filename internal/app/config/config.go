@@ -148,8 +148,8 @@ func setFlags() {
 
 	pflag.String(databaseConnectionString, databaseConnectionStringDefault, "Database connection string.")
 
-	pflag.String(metricsNamespace, metricsNamespace, "Metrics namespace.")
-	pflag.String(metricsSubsystem, metricsSubsystem, "Metrics sub system name.")
+	pflag.String(metricsNamespace, metricsNamespaceDefault, "Metrics namespace.")
+	pflag.String(metricsSubsystem, metricsSubsystemDefault, "Metrics sub system name.")
 	pflag.String(metricsAddress, metricsAddressDefault, "Metrics server listen address.")
 
 	pflag.String(serverAddress, serverAddressDefault, "Server listen address.")
