@@ -45,6 +45,20 @@
       registry: registry.scs.community
       repository: registry.scs.community/status-page/status-page-api
 
+- job:
+    name: scs-status-page-container-push
+    parent: upload-container-image
+    nodeset:
+      nodes:
+        - name: ubuntu-jammy
+          label: ubuntu-jammy
+    vars:
+      registry: registry.scs.community
+      repository: registry.scs.community/status-page/status-page-api
+    secrets:
+      - name: container_registry_credentials
+        secret: status-page-registry-credentials
+
 - project:
     name: SovereignCloudStack/status-page-api
     merge-mode: squash-merge
@@ -55,3 +69,21 @@
         - scs-status-page-go-test
         - scs-status-page-go-build
         - scs-status-page-container-build
+    post:
+      jobs:
+        - scs-status-page-container-push
+
+- secret:
+    name: status-page-registry-credentials
+    data:
+      registry.scs.community: !encrypted/pkcs1-oaep
+        - COGaLv1I6i30vFuhD+Hrd2MspWof62s2BYP7hAqITh7P3b3iAaxQk1PVvepJezWSk5oyL
+          VzPsTTh3aaxj9kkaUWt39zDye4df6Yjnakfr3QTw8/T1OBpf/TfUIRXKOejN/fgvrLc73
+          9O+BPUXN1DhgAjpx0KQ8QCRLFY5k8iGDZEChSJwUv5lYH9w7ygtz2P4FmRT0kNCqihFTC
+          nXCkS2TYGLoA7ZJe+5Hf9HOIBGkOSXjvF4Ot4MowA8G0Ct4YSEchVecpA4pKgHBYiw+Rr
+          tyV//oD43SjGV8pHUO4ZyLKjxoyKBmUB1Y9r78JsMS591WAzM21w3B0ZU2u1tCjc+nnaH
+          Gr5PLUmf3rypd86OalNvzLnaAVpDDUx8q0FOtAanzUUKQxJ3UgRQKdIOr5wBPOw+KScU8
+          /dU75oJAA/5wfdWhHfVKI9+tw0rxkZBCw3qdccy5ufjNX6DU0Ca02fCQ90x/HT8Pt9pDM
+          T3u3aZhr8Gps729U8SRc/HPdt8MKaYet4B9SmXHn4v+KmAVY2wbhjMoBZAqD2llmeZ7sI
+          aIvXv504HhbvRHhiVFYlE0kReR5OKPMVxYKrmihG0poQXvti18z+N3WBQyZgntBw3hGSR
+          oVzy6oUtjuHwRn0j+43HP1lrvoL8x5A3UL1IkUTo995B5rbOFFX0StvA8r+H0Y=
