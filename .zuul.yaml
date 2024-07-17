@@ -33,6 +33,18 @@
       go_command: build cmd/status-page-api/main.go
       go_version: 1.23.0
 
+- job:
+    name: scs-status-page-container-build
+    parent: build-container-image
+    nodeset:
+      nodes:
+        - name: ubuntu-jammy
+          label: ubuntu-jammy
+    vars:
+      container_filename: Containerfile
+      registry: registry.scs.community
+      repository: registry.scs.community/status-page/status-page-api
+
 - project:
     name: SovereignCloudStack/status-page-api
     merge-mode: squash-merge
@@ -42,3 +54,4 @@
         - scs-status-page-go-lint
         - scs-status-page-go-test
         - scs-status-page-go-build
+        - scs-status-page-container-build
