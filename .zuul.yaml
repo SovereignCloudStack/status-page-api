@@ -41,6 +41,7 @@
         - name: ubuntu-jammy
           label: ubuntu-jammy
     vars:
+      container_command: docker
       container_filename: Containerfile
       registry: registry.scs.community
       repository: registry.scs.community/status-page/status-page-api
@@ -53,6 +54,7 @@
         - name: ubuntu-jammy
           label: ubuntu-jammy
     vars:
+      container_command: docker
       registry: registry.scs.community
       repository: registry.scs.community/status-page/status-page-api
     secrets:
