@@ -42,9 +42,10 @@
           label: ubuntu-jammy
     vars:
       container_command: docker
-      container_filename: Containerfile
-      registry: registry.scs.community
-      repository: registry.scs.community/status-page/status-page-api
+      container_images:
+        - container_filename: Containerfile
+          registry: registry.scs.community
+          repository: registry.scs.community/status-page/status-page-api
 
 - job:
     name: scs-status-page-container-push
@@ -55,8 +56,9 @@
           label: ubuntu-jammy
     vars:
       container_command: docker
-      registry: registry.scs.community
-      repository: registry.scs.community/status-page/status-page-api
+      container_images:
+        - registry: registry.scs.community
+          repository: registry.scs.community/status-page/status-page-api
     secrets:
       - name: container_registry_credentials
         secret: status-page-registry-credentials
