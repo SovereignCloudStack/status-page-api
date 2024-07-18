@@ -46,7 +46,7 @@
     vars:
       container_command: docker
       container_images:
-        - context: src/github.com/SovereignCloudStack/status-page-api
+        - context: "."
           container_filename: Containerfile
           registry: registry.scs.community
           repository: registry.scs.community/status-page/status-page-api
