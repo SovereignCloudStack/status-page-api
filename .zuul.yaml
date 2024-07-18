@@ -79,7 +79,6 @@
       jobs:
         - scs-status-page-go-lint
         - scs-status-page-go-test
-        - scs-status-page-go-build
         - scs-status-page-container-build
     post:
       jobs:
