@@ -40,6 +40,8 @@
       nodes:
         - name: ubuntu-jammy
           label: ubuntu-jammy
+    requires:
+      - test
     provides:
       - image
 
