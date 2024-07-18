@@ -10,6 +10,8 @@
       golangci_lint_version: 1.59.1
       go_version: 1.22.4
       golangci_lint_options: --timeout 5m
+    provides:
+      - lint
 
 - job:
     name: scs-status-page-go-test
@@ -21,17 +23,10 @@
     vars:
       go_command: test ./...
       go_version: 1.22.4
-
-- job:
-    name: scs-status-page-go-build
-    parent: golang-go
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
-    vars:
-      go_command: build cmd/status-page-api/main.go
-      go_version: 1.22.4
+    requires:
+      - lint
+    provides:
+      - test
 
 - job:
     name: scs-status-page-container-build
@@ -40,6 +35,8 @@
       nodes:
         - name: ubuntu-jammy
           label: ubuntu-jammy
+    requires:
+      - test
     provides:
       - image
 
