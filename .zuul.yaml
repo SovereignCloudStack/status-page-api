@@ -40,6 +40,9 @@
       nodes:
         - name: ubuntu-jammy
           label: ubuntu-jammy
+    provides:
+      - image
+
     vars:
       container_command: docker
       container_images:
@@ -62,6 +65,8 @@
     secrets:
       - name: container_registry_credentials
         secret: status-page-registry-credentials
+    requires:
+      - image
 
 - project:
     name: SovereignCloudStack/status-page-api
