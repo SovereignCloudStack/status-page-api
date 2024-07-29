@@ -63,8 +63,39 @@
     vars:
       container_command: docker
       container_images:
-        - registry: registry.scs.community
+        - context: "."
+          container_filename: Containerfile
+          registry: registry.scs.community
           repository: registry.scs.community/status-page/status-page-api
+          tags:
+            - latest
+            - "{{ zuul.commit_id }}"
+            - "{{ zuul.tag }}"
+    secrets:
+      - name: container_registry_credentials
+        secret: status-page-registry-credentials
+    requires:
+      - image
+
+- job:
+    name: scs-status-page-container-tag
+    parent: promote-container-image
+    nodeset:
+      nodes:
+        - name: ubuntu-jammy
+          label: ubuntu-jammy
+    vars:
+      promote_container_method: tag
+      container_command: docker
+      container_images:
+        - context: "."
+          container_filename: Containerfile
+          registry: registry.scs.community
+          repository: registry.scs.community/status-page/status-page-api
+          tags:
+            - latest
+            - "{{ zuul.commit_id }}"
+            - "{{ zuul.tag }}"
     secrets:
       - name: container_registry_credentials
         secret: status-page-registry-credentials
@@ -80,9 +111,13 @@
         - scs-status-page-go-lint
         - scs-status-page-go-test
         - scs-status-page-container-build
+        - scs-status-page-container-tag
     post:
       jobs:
         - scs-status-page-container-push
+    tag:
+      jobs:
+        - scs-status-page-container-tag
 
 - secret:
     name: status-page-registry-credentials
