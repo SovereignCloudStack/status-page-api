@@ -70,7 +70,6 @@
           tags:
             - latest
             - "{{ zuul.commit_id }}"
-            - "{{ zuul.tag }}"
     secrets:
       - name: container_registry_credentials
         secret: status-page-registry-credentials
@@ -111,7 +110,6 @@
         - scs-status-page-go-lint
         - scs-status-page-go-test
         - scs-status-page-container-build
-        - scs-status-page-container-tag
     post:
       jobs:
         - scs-status-page-container-push
