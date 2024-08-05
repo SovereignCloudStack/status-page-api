@@ -70,6 +70,10 @@ func (i *Implementation) CreateSeverity(ctx echo.Context) error {
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error creating severity")
 
+		if errors.Is(res.Error, gorm.ErrDuplicatedKey) {
+			return echo.ErrBadRequest
+		}
+
 		return echo.ErrInternalServerError
 	}
 
