@@ -1,6 +1,9 @@
 package db
 
-import apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
+import (
+	"github.com/SovereignCloudStack/status-page-api/pkg/api"
+	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
+)
 
 // Severity represents a severity of a incident affecting a component.
 type Severity struct {
@@ -33,7 +36,7 @@ func NewSeverity(
 	displayName apiServerDefinition.DisplayName,
 	value apiServerDefinition.SeverityValue,
 ) (*Severity, error) {
-	if value < 0 || value > 100 {
+	if value <= api.MaintenanceSeverity || value > api.MaxSeverity {
 		return nil, ErrSeverityValueOutOfRange
 	}
 

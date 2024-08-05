@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/SovereignCloudStack/status-page-api/pkg/api"
 	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 )
 
@@ -54,6 +55,10 @@ func AffectsFromImpactComponentList(componentImpacts *apiServerDefinition.Impact
 	impacts := make([]Impact, len(*componentImpacts))
 
 	for impactIndex, impact := range *componentImpacts {
+		if impact.Severity != nil && (*impact.Severity < api.MaintenanceSeverity || *impact.Severity > api.MaxSeverity) {
+			return nil, ErrSeverityValueOutOfRange
+		}
+
 		impacts[impactIndex].ComponentID = impact.Reference
 		impacts[impactIndex].ImpactTypeID = impact.Type
 
