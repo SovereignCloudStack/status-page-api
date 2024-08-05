@@ -98,8 +98,9 @@ var _ = Describe("Component", Ordered, func() {
 
 	Describe("GetComponents", func() {
 		var (
-			ctx echo.Context
-			res *httptest.ResponseRecorder
+			ctx    echo.Context
+			res    *httptest.ResponseRecorder
+			params apiServerDefinition.GetComponentsParams
 		)
 
 		BeforeEach(func() {
@@ -110,6 +111,10 @@ var _ = Describe("Component", Ordered, func() {
 				componentsEndpoint,
 				nil,
 			)
+
+			params = apiServerDefinition.GetComponentsParams{
+				At: nil,
+			}
 		})
 
 		Context("without data", func() {
@@ -122,7 +127,7 @@ var _ = Describe("Component", Ordered, func() {
 				})
 
 				// Act
-				err := handlers.GetComponents(ctx)
+				err := handlers.GetComponents(ctx, params)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -151,7 +156,7 @@ var _ = Describe("Component", Ordered, func() {
 				})
 
 				// Act
-				err := handlers.GetComponents(ctx)
+				err := handlers.GetComponents(ctx, params)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -166,7 +171,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectQuery(expectedComponentsQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetComponents(ctx)
+				err := handlers.GetComponents(ctx, params)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -314,8 +319,9 @@ var _ = Describe("Component", Ordered, func() {
 
 	Describe("GetComponent", func() {
 		var (
-			ctx echo.Context
-			res *httptest.ResponseRecorder
+			ctx    echo.Context
+			res    *httptest.ResponseRecorder
+			params apiServerDefinition.GetComponentParams
 		)
 
 		BeforeEach(func() {
@@ -326,6 +332,10 @@ var _ = Describe("Component", Ordered, func() {
 				componentEndpoint,
 				nil,
 			)
+
+			params = apiServerDefinition.GetComponentParams{
+				At: nil,
+			}
 		})
 
 		Context("with valid UUID and valid data", func() {
@@ -347,7 +357,7 @@ var _ = Describe("Component", Ordered, func() {
 				})
 
 				// Act
-				err := handlers.GetComponent(ctx, componentUUID)
+				err := handlers.GetComponent(ctx, componentUUID, params)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -362,7 +372,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectQuery(expectedComponentQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetComponent(ctx, componentUUID)
+				err := handlers.GetComponent(ctx, componentUUID, params)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -376,7 +386,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectQuery(expectedComponentQuery).WillReturnRows(componentRows)
 
 				// Act
-				err := handlers.GetComponent(ctx, componentUUID)
+				err := handlers.GetComponent(ctx, componentUUID, params)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
