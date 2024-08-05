@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/SovereignCloudStack/status-page-api/pkg/api"
 	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 )
@@ -46,6 +47,7 @@ func (i *Incident) GetImpactComponentList() *apiServerDefinition.ImpactComponent
 	for impactIndex, impact := range *i.Affects {
 		impacts[impactIndex].Reference = impact.ComponentID
 		impacts[impactIndex].Type = impact.ImpactTypeID
+		impacts[impactIndex].Severity = impact.Severity
 	}
 
 	return &impacts
@@ -62,6 +64,24 @@ func (i *Incident) GetIncidentUpdates() *apiServerDefinition.IncrementalList {
 	return &updates
 }
 
+func isMaintenance(impacts *[]Impact) bool {
+	if impacts == nil {
+		return false
+	}
+
+	for _, impact := range *impacts {
+		if impact.Severity == nil {
+			continue
+		}
+
+		if *impact.Severity == api.MaintenanceSeverity {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IncidentFromAPI creates an [Incident] from an API request.
 func IncidentFromAPI(incidentRequest *apiServerDefinition.Incident) (*Incident, error) {
 	if incidentRequest == nil {
@@ -73,6 +93,10 @@ func IncidentFromAPI(incidentRequest *apiServerDefinition.Incident) (*Incident, 
 		if !errors.Is(err, ErrEmptyValue) {
 			return nil, fmt.Errorf("error parsing affects: %w", err)
 		}
+	}
+
+	if isMaintenance(affects) && incidentRequest.EndedAt == nil {
+		return nil, ErrMaintenanceNeedsEnd
 	}
 
 	phase, err := PhaseReferenceFromAPI(incidentRequest.Phase)

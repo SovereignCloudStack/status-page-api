@@ -9,4 +9,6 @@ var (
 	ErrEmptyValue = errors.New("value is empty")
 	// ErrSeverityValueOutOfRange Severity value is out of range.
 	ErrSeverityValueOutOfRange = errors.New("severity value out of range")
+	// ErrMaintenanceNeedsEnd ...
+	ErrMaintenanceNeedsEnd = errors.New("maintenance event needs a end")
 )
