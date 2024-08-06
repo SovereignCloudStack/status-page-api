@@ -34,58 +34,40 @@
       go_version: 1.23.0
 
 - job:
-    name: scs-status-page-container-build
-    parent: build-container-image
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    name: scs-status-page-build-container-image
+    parent: scs-build-container-image
     requires:
       - test
     provides:
       - image
-
     vars:
-      container_command: docker
-      container_images:
-        - context: "."
-          container_filename: Containerfile
-          registry: registry.scs.community
-          repository: registry.scs.community/status-page/status-page-api
-
-- job:
-    name: scs-status-page-container-push
-    parent: upload-container-image
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
-    vars:
-      container_command: docker
-      container_images:
+      container_images: &status-page-build-container-image
         - context: "."
           container_filename: Containerfile
           registry: registry.scs.community
           repository: registry.scs.community/status-page/status-page-api
           tags:
+            - "{{ zuul.commit_id }}"
+
+- job:
+    name: scs-status-page-upload-container-image
+    parent: scs-upload-container-image
+    vars:
+      upload_container_image_promote: false
+      container_images:
+        - context:
+          <<: *status-page-build-container-image
+          tags:
             - latest
             - "{{ zuul.commit_id }}"
-    secrets:
-      - name: container_registry_credentials
-        secret: status-page-registry-credentials
     requires:
       - image
 
 - job:
-    name: scs-status-page-container-tag
-    parent: promote-container-image
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    name: scs-status-page-upload-container-tag-image
+    parent: scs-upload-container-image
     vars:
       promote_container_method: tag
-      container_command: docker
       container_images:
         - context: "."
           container_filename: Containerfile
@@ -95,9 +77,6 @@
             - latest
             - "{{ zuul.commit_id }}"
             - "{{ zuul.tag }}"
-    secrets:
-      - name: container_registry_credentials
-        secret: status-page-registry-credentials
     requires:
       - image
 
@@ -109,25 +88,10 @@
       jobs:
         - scs-status-page-go-lint
         - scs-status-page-go-test
-        - scs-status-page-container-build
+        - scs-status-page-build-container-image
     post:
       jobs:
-        - scs-status-page-container-push
+        - scs-status-page-upload-container-image
     tag:
       jobs:
-        - scs-status-page-container-tag
-
-- secret:
-    name: status-page-registry-credentials
-    data:
-      registry.scs.community: !encrypted/pkcs1-oaep
-        - COGaLv1I6i30vFuhD+Hrd2MspWof62s2BYP7hAqITh7P3b3iAaxQk1PVvepJezWSk5oyL
-          VzPsTTh3aaxj9kkaUWt39zDye4df6Yjnakfr3QTw8/T1OBpf/TfUIRXKOejN/fgvrLc73
-          9O+BPUXN1DhgAjpx0KQ8QCRLFY5k8iGDZEChSJwUv5lYH9w7ygtz2P4FmRT0kNCqihFTC
-          nXCkS2TYGLoA7ZJe+5Hf9HOIBGkOSXjvF4Ot4MowA8G0Ct4YSEchVecpA4pKgHBYiw+Rr
-          tyV//oD43SjGV8pHUO4ZyLKjxoyKBmUB1Y9r78JsMS591WAzM21w3B0ZU2u1tCjc+nnaH
-          Gr5PLUmf3rypd86OalNvzLnaAVpDDUx8q0FOtAanzUUKQxJ3UgRQKdIOr5wBPOw+KScU8
-          /dU75oJAA/5wfdWhHfVKI9+tw0rxkZBCw3qdccy5ufjNX6DU0Ca02fCQ90x/HT8Pt9pDM
-          T3u3aZhr8Gps729U8SRc/HPdt8MKaYet4B9SmXHn4v+KmAVY2wbhjMoBZAqD2llmeZ7sI
-          aIvXv504HhbvRHhiVFYlE0kReR5OKPMVxYKrmihG0poQXvti18z+N3WBQyZgntBw3hGSR
-          oVzy6oUtjuHwRn0j+43HP1lrvoL8x5A3UL1IkUTo995B5rbOFFX0StvA8r+H0Y=
+        - scs-status-page-upload-container-tag-image
