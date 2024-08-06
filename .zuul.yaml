@@ -63,23 +63,6 @@
     requires:
       - image
 
-- job:
-    name: scs-status-page-upload-container-tag-image
-    parent: scs-upload-container-image
-    vars:
-      promote_container_method: tag
-      container_images:
-        - context: "."
-          container_filename: Containerfile
-          registry: registry.scs.community
-          repository: registry.scs.community/status-page/status-page-api
-          tags:
-            - latest
-            - "{{ zuul.commit_id }}"
-            - "{{ zuul.tag }}"
-    requires:
-      - image
-
 - project:
     name: SovereignCloudStack/status-page-api
     merge-mode: squash-merge
@@ -92,6 +75,3 @@
     post:
       jobs:
         - scs-status-page-upload-container-image
-    tag:
-      jobs:
-        - scs-status-page-upload-container-tag-image
