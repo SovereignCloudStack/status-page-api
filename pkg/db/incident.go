@@ -88,6 +88,12 @@ func IncidentFromAPI(incidentRequest *apiServerDefinition.Incident) (*Incident, 
 		return nil, ErrEmptyValue
 	}
 
+	if incidentRequest.BeganAt != nil &&
+		incidentRequest.EndedAt != nil &&
+		incidentRequest.EndedAt.Before(*incidentRequest.BeganAt) {
+		return nil, ErrEndsBeforeStart
+	}
+
 	affects, err := AffectsFromImpactComponentList(incidentRequest.Affects)
 	if err != nil {
 		if !errors.Is(err, ErrEmptyValue) {
@@ -106,16 +112,14 @@ func IncidentFromAPI(incidentRequest *apiServerDefinition.Incident) (*Incident, 
 		}
 	}
 
-	incident := Incident{ //nolint:exhaustruct
+	return &Incident{ //nolint:exhaustruct
 		DisplayName: incidentRequest.DisplayName,
 		Description: incidentRequest.Description,
 		BeganAt:     incidentRequest.BeganAt,
 		EndedAt:     incidentRequest.EndedAt,
 		Phase:       phase,
 		Affects:     affects,
-	}
-
-	return &incident, nil
+	}, nil
 }
 
 // IncidentUpdate describes a action that changes the incident.
