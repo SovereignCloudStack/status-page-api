@@ -110,6 +110,10 @@ linters:
     - zerologlint
 
 linters-settings:
+  cyclop:
+    max-complexity: 15
+  funlen:
+    ignore-comments: true
   govet:
     enable-all: true
   misspell:
