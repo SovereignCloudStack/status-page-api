@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
@@ -48,11 +49,30 @@ var _ = Describe("Component", Ordered, func() {
 
 		// expected SQL
 		expectedComponentsQuery = regexp.QuoteMeta(`SELECT * FROM "components"`)
-		expectedComponentQuery  = regexp.QuoteMeta(`SELECT * FROM "components" WHERE id = $1 ORDER BY "components"."id" LIMIT $2`) //nolint:lll
-		expectedComponentInsert = regexp.QuoteMeta(`INSERT INTO "components" ("display_name","labels","id") VALUES ($1,$2,$3)`)    //nolint:lll
+		expectedComponentQuery  = regexp.QuoteMeta(
+			`SELECT *
+			FROM "components"
+			WHERE id = $1
+			ORDER BY "components"."id"
+			LIMIT $2`,
+		)
+		expectedComponentInsert = regexp.QuoteMeta(
+			`INSERT INTO "components" ("display_name","labels","id")
+			VALUES ($1,$2,$3)`,
+		)
 		expectedComponentDelete = regexp.QuoteMeta(`DELETE FROM "components" WHERE id = $1`)
 		expectedComponentUpdate = regexp.QuoteMeta(`UPDATE "components" SET "display_name"=$1 WHERE "id" = $2`)
-		expectedImpactQuery     = `SELECT .+ FROM "impacts" LEFT JOIN "incidents" "Incident" ON "impacts"."incident_id" = "Incident"."id" WHERE ended_at IS NULL AND "impacts"."component_id" = \$1` //nolint:lll
+		expectedImpactQuery     = `SELECT .+
+		FROM "impacts"
+		LEFT JOIN "incidents" "Incident" ON "impacts"\."incident_id" = "Incident"\."id"
+		WHERE ended_at IS NULL
+		AND "impacts"\."component_id" = \$1`
+		expectedImpactQueryWithAt = `SELECT .+
+		FROM "impacts"
+		LEFT JOIN "incidents" "Incident" ON "impacts"\."incident_id" = "Incident"\."id"
+		WHERE \(began_at < \$1 AND ended_at > \$2\)
+		OR \(began_at < \$3 AND ended_at IS NULL\)
+		AND "impacts"\."component_id" = \$4`
 
 		// UUID of the test component
 		componentUUID = uuid.MustParse(componentID)
@@ -98,8 +118,9 @@ var _ = Describe("Component", Ordered, func() {
 
 	Describe("GetComponents", func() {
 		var (
-			ctx echo.Context
-			res *httptest.ResponseRecorder
+			ctx    echo.Context
+			res    *httptest.ResponseRecorder
+			params apiServerDefinition.GetComponentsParams
 		)
 
 		BeforeEach(func() {
@@ -110,6 +131,10 @@ var _ = Describe("Component", Ordered, func() {
 				componentsEndpoint,
 				nil,
 			)
+
+			params = apiServerDefinition.GetComponentsParams{
+				At: nil,
+			}
 		})
 
 		Context("without data", func() {
@@ -122,7 +147,7 @@ var _ = Describe("Component", Ordered, func() {
 				})
 
 				// Act
-				err := handlers.GetComponents(ctx)
+				err := handlers.GetComponents(ctx, params)
 
 				// Assert
 				Ω(err).ShouldNot(HaveOccurred())
@@ -132,31 +157,63 @@ var _ = Describe("Component", Ordered, func() {
 		})
 
 		Context("with valid data", func() {
-			It("should return a list of components", func() {
-				// Arrange
-				sqlMock.
-					ExpectQuery(expectedComponentsQuery).
-					WillReturnRows(
-						componentRows.AddRow(component.ID, component.DisplayName, component.Labels),
-					)
-				sqlMock.
-					ExpectQuery(expectedImpactQuery).
-					WithArgs(componentID).
-					WillReturnRows(impactRows, incidentRows)
+			Context("without at param", func() {
+				It("should return a list of components", func() {
+					// Arrange
+					sqlMock.
+						ExpectQuery(expectedComponentsQuery).
+						WillReturnRows(
+							componentRows.AddRow(component.ID, component.DisplayName, component.Labels),
+						)
+					sqlMock.
+						ExpectQuery(expectedImpactQuery).
+						WithArgs(componentID).
+						WillReturnRows(impactRows, incidentRows)
 
-				expectedResult, _ := json.Marshal(apiServerDefinition.ComponentListResponse{
-					Data: []apiServerDefinition.ComponentResponseData{
-						component.ToAPIResponse(),
-					},
+					expectedResult, _ := json.Marshal(apiServerDefinition.ComponentListResponse{
+						Data: []apiServerDefinition.ComponentResponseData{
+							component.ToAPIResponse(),
+						},
+					})
+
+					// Act
+					err := handlers.GetComponents(ctx, params)
+
+					// Assert
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(res.Code).Should(Equal(http.StatusOK))
+					Ω(strings.Trim(res.Body.String(), "\n")).Should(Equal(string(expectedResult)))
 				})
+			})
+			Context("with at param", func() {
+				It("should return a list of components", func() {
+					// Arrange
+					now := time.Now()
+					params.At = &now
+					sqlMock.
+						ExpectQuery(expectedComponentsQuery).
+						WillReturnRows(
+							componentRows.AddRow(component.ID, component.DisplayName, component.Labels),
+						)
+					sqlMock.
+						ExpectQuery(expectedImpactQueryWithAt).
+						WithArgs(now, now, now, componentID).
+						WillReturnRows(impactRows, incidentRows)
 
-				// Act
-				err := handlers.GetComponents(ctx)
+					expectedResult, _ := json.Marshal(apiServerDefinition.ComponentListResponse{
+						Data: []apiServerDefinition.ComponentResponseData{
+							component.ToAPIResponse(),
+						},
+					})
 
-				// Assert
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(res.Code).Should(Equal(http.StatusOK))
-				Ω(strings.Trim(res.Body.String(), "\n")).Should(Equal(string(expectedResult)))
+					// Act
+					err := handlers.GetComponents(ctx, params)
+
+					// Assert
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(res.Code).Should(Equal(http.StatusOK))
+					Ω(strings.Trim(res.Body.String(), "\n")).Should(Equal(string(expectedResult)))
+				})
 			})
 		})
 
@@ -166,7 +223,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectQuery(expectedComponentsQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetComponents(ctx)
+				err := handlers.GetComponents(ctx, params)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -314,8 +371,9 @@ var _ = Describe("Component", Ordered, func() {
 
 	Describe("GetComponent", func() {
 		var (
-			ctx echo.Context
-			res *httptest.ResponseRecorder
+			ctx    echo.Context
+			res    *httptest.ResponseRecorder
+			params apiServerDefinition.GetComponentParams
 		)
 
 		BeforeEach(func() {
@@ -326,33 +384,69 @@ var _ = Describe("Component", Ordered, func() {
 				componentEndpoint,
 				nil,
 			)
+
+			params = apiServerDefinition.GetComponentParams{
+				At: nil,
+			}
 		})
 
 		Context("with valid UUID and valid data", func() {
-			It("should return a single component", func() {
-				// Arrange
-				sqlMock.
-					ExpectQuery(expectedComponentQuery).
-					WithArgs(componentID, 1).
-					WillReturnRows(
-						componentRows.AddRow(component.ID, component.DisplayName, component.Labels),
-					)
-				sqlMock.
-					ExpectQuery(expectedImpactQuery).
-					WithArgs(componentID).
-					WillReturnRows(impactRows, incidentRows)
+			Context("without at param", func() {
+				It("should return a single component", func() {
+					// Arrange
+					sqlMock.
+						ExpectQuery(expectedComponentQuery).
+						WithArgs(componentID, 1).
+						WillReturnRows(
+							componentRows.AddRow(component.ID, component.DisplayName, component.Labels),
+						)
+					sqlMock.
+						ExpectQuery(expectedImpactQuery).
+						WithArgs(componentID).
+						WillReturnRows(impactRows, incidentRows)
 
-				expectedResult, _ := json.Marshal(apiServerDefinition.ComponentResponse{
-					Data: component.ToAPIResponse(),
+					expectedResult, _ := json.Marshal(apiServerDefinition.ComponentResponse{
+						Data: component.ToAPIResponse(),
+					})
+
+					// Act
+					err := handlers.GetComponent(ctx, componentUUID, params)
+
+					// Assert
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(res.Code).Should(Equal(http.StatusOK))
+					Ω(strings.Trim(res.Body.String(), "\n")).Should(Equal(string(expectedResult)))
 				})
+			})
 
-				// Act
-				err := handlers.GetComponent(ctx, componentUUID)
+			Context("with at param", func() {
+				It("should return a single component", func() {
+					// Arrange
+					now := time.Now()
+					params.At = &now
+					sqlMock.
+						ExpectQuery(expectedComponentQuery).
+						WithArgs(componentID, 1).
+						WillReturnRows(
+							componentRows.AddRow(component.ID, component.DisplayName, component.Labels),
+						)
+					sqlMock.
+						ExpectQuery(expectedImpactQueryWithAt).
+						WithArgs(now, now, now, componentID).
+						WillReturnRows(impactRows, incidentRows)
 
-				// Assert
-				Ω(err).ShouldNot(HaveOccurred())
-				Ω(res.Code).Should(Equal(http.StatusOK))
-				Ω(strings.Trim(res.Body.String(), "\n")).Should(Equal(string(expectedResult)))
+					expectedResult, _ := json.Marshal(apiServerDefinition.ComponentResponse{
+						Data: component.ToAPIResponse(),
+					})
+
+					// Act
+					err := handlers.GetComponent(ctx, componentUUID, params)
+
+					// Assert
+					Ω(err).ShouldNot(HaveOccurred())
+					Ω(res.Code).Should(Equal(http.StatusOK))
+					Ω(strings.Trim(res.Body.String(), "\n")).Should(Equal(string(expectedResult)))
+				})
 			})
 		})
 
@@ -362,7 +456,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectQuery(expectedComponentQuery).WillReturnError(test.ErrTestError)
 
 				// Act
-				err := handlers.GetComponent(ctx, componentUUID)
+				err := handlers.GetComponent(ctx, componentUUID, params)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())
@@ -376,7 +470,7 @@ var _ = Describe("Component", Ordered, func() {
 				sqlMock.ExpectQuery(expectedComponentQuery).WillReturnRows(componentRows)
 
 				// Act
-				err := handlers.GetComponent(ctx, componentUUID)
+				err := handlers.GetComponent(ctx, componentUUID, params)
 
 				// Assert
 				Ω(err).Should(HaveOccurred())

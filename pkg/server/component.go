@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
@@ -10,18 +11,30 @@ import (
 	"gorm.io/gorm"
 )
 
+func incidentJoin(at *time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		join := db.Joins("Incident")
+
+		if at != nil {
+			join = join.Where("began_at < ? AND ended_at > ?", at, at).Or("began_at < ? AND ended_at IS NULL", at)
+		} else {
+			join = join.Where("ended_at IS NULL")
+		}
+
+		return join
+	}
+}
+
 // GetComponents retrieves a list of all components.
-func (i *Implementation) GetComponents(ctx echo.Context) error {
+func (i *Implementation) GetComponents(ctx echo.Context, params apiServerDefinition.GetComponentsParams) error {
 	var components []*DbDef.Component
 
 	logger := i.logger.With().Str("handler", "GetComponents").Logger()
-	logger.Debug().Send()
+	logger.Debug().Interface("at", params.At).Send()
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
-		return db.Joins("Incident").Where("ended_at IS NULL")
-	}).Find(&components)
+	res := dbSession.Preload("ActivelyAffectedBy", incidentJoin(params.At)).Find(&components)
 
 	if res.Error != nil {
 		logger.Error().Err(res.Error).Msg("error loading components")
@@ -111,6 +124,7 @@ func (i *Implementation) DeleteComponent(
 func (i *Implementation) GetComponent(
 	ctx echo.Context,
 	componentID apiServerDefinition.ComponentIdPathParameter,
+	params apiServerDefinition.GetComponentParams,
 ) error {
 	var component DbDef.Component
 
@@ -119,9 +133,7 @@ func (i *Implementation) GetComponent(
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Preload("ActivelyAffectedBy", func(db *gorm.DB) *gorm.DB {
-		return db.Joins("Incident").Where("ended_at IS NULL")
-	}).Where("id = ?", componentID).First(&component)
+	res := dbSession.Preload("ActivelyAffectedBy", incidentJoin(params.At)).Where("id = ?", componentID).First(&component)
 	if res.Error != nil {
 		if errors.Is(res.Error, gorm.ErrRecordNotFound) {
 			logger.Warn().Msg("component not found")

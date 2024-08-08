@@ -23,7 +23,8 @@ type Database struct {
 // New creates a new wrapper for the database and initialize it.
 func New(connection string, logger *zerolog.Logger) (*Database, error) {
 	conn, err := gorm.Open(postgres.Open(connection), &gorm.Config{ //nolint:exhaustruct
-		Logger: logging.NewGormLogger(logger),
+		Logger:         logging.NewGormLogger(logger),
+		TranslateError: true,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("error connecting database: %w", err)

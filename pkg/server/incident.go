@@ -245,7 +245,7 @@ func (i *Implementation) GetIncidentUpdates(
 }
 
 // CreateIncidentUpdate handles updates to an update for one incident.
-func (i *Implementation) CreateIncidentUpdate( //nolint:funlen
+func (i *Implementation) CreateIncidentUpdate(
 	ctx echo.Context,
 	incidentID apiServerDefinition.IncidentIdPathParameter,
 ) error {

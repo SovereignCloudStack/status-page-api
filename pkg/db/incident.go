@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/SovereignCloudStack/status-page-api/pkg/api"
 	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
 )
@@ -46,6 +47,7 @@ func (i *Incident) GetImpactComponentList() *apiServerDefinition.ImpactComponent
 	for impactIndex, impact := range *i.Affects {
 		impacts[impactIndex].Reference = impact.ComponentID
 		impacts[impactIndex].Type = impact.ImpactTypeID
+		impacts[impactIndex].Severity = impact.Severity
 	}
 
 	return &impacts
@@ -62,10 +64,34 @@ func (i *Incident) GetIncidentUpdates() *apiServerDefinition.IncrementalList {
 	return &updates
 }
 
+func isMaintenance(impacts *[]Impact) bool {
+	if impacts == nil {
+		return false
+	}
+
+	for _, impact := range *impacts {
+		if impact.Severity == nil {
+			continue
+		}
+
+		if *impact.Severity == api.MaintenanceSeverity {
+			return true
+		}
+	}
+
+	return false
+}
+
 // IncidentFromAPI creates an [Incident] from an API request.
 func IncidentFromAPI(incidentRequest *apiServerDefinition.Incident) (*Incident, error) {
 	if incidentRequest == nil {
 		return nil, ErrEmptyValue
+	}
+
+	if incidentRequest.BeganAt != nil &&
+		incidentRequest.EndedAt != nil &&
+		incidentRequest.EndedAt.Before(*incidentRequest.BeganAt) {
+		return nil, ErrEndsBeforeStart
 	}
 
 	affects, err := AffectsFromImpactComponentList(incidentRequest.Affects)
@@ -75,6 +101,10 @@ func IncidentFromAPI(incidentRequest *apiServerDefinition.Incident) (*Incident, 
 		}
 	}
 
+	if isMaintenance(affects) && incidentRequest.EndedAt == nil {
+		return nil, ErrMaintenanceNeedsEnd
+	}
+
 	phase, err := PhaseReferenceFromAPI(incidentRequest.Phase)
 	if err != nil {
 		if !errors.Is(err, ErrEmptyValue) {
@@ -82,16 +112,14 @@ func IncidentFromAPI(incidentRequest *apiServerDefinition.Incident) (*Incident, 
 		}
 	}
 
-	incident := Incident{ //nolint:exhaustruct
+	return &Incident{ //nolint:exhaustruct
 		DisplayName: incidentRequest.DisplayName,
 		Description: incidentRequest.Description,
 		BeganAt:     incidentRequest.BeganAt,
 		EndedAt:     incidentRequest.EndedAt,
 		Phase:       phase,
 		Affects:     affects,
-	}
-
-	return &incident, nil
+	}, nil
 }
 
 // IncidentUpdate describes a action that changes the incident.

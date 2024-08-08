@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/SovereignCloudStack/status-page-api/internal/app/util/test"
+	"github.com/SovereignCloudStack/status-page-api/pkg/api"
 	"github.com/SovereignCloudStack/status-page-api/pkg/db"
 	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
 	"github.com/google/uuid"
@@ -203,6 +204,101 @@ var _ = Describe("Incident", func() {
 				Ω(err).Should(HaveOccurred())
 				Ω(err).Should(Equal(db.ErrEmptyValue))
 				Ω(res).Should(BeNil())
+			})
+		})
+	})
+
+	Context("maintenance", func() {
+		Context("with no end time", func() {
+			It("should throw ErrMaintenanceNeedsEnd", func() {
+				// Arrange
+				incidentRequest := &apiServerDefinition.Incident{
+					Affects: &apiServerDefinition.ImpactComponentList{
+						{
+							Reference: &componentUUID,
+							Type:      &impactTypeUUID,
+							Severity:  test.Ptr(api.MaintenanceSeverity),
+						},
+					},
+					BeganAt:     &beganAt,
+					DisplayName: test.Ptr("Maintenance"),
+					Description: test.Ptr("Maintenance event."),
+				}
+
+				// Act
+				res, err := db.IncidentFromAPI(incidentRequest)
+
+				// Assert
+				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(Equal(db.ErrMaintenanceNeedsEnd))
+				Ω(res).Should(BeNil())
+			})
+		})
+
+		Context("with end before start", func() {
+			It("should throw ErrEndsBeforeStart", func() {
+				// Arrange
+				incidentRequest := &apiServerDefinition.Incident{
+					Affects: &apiServerDefinition.ImpactComponentList{
+						{
+							Reference: &componentUUID,
+							Type:      &impactTypeUUID,
+							Severity:  test.Ptr(api.MaintenanceSeverity),
+						},
+					},
+					BeganAt:     &endedAt,
+					DisplayName: test.Ptr("Maintenance"),
+					Description: test.Ptr("Maintenance event."),
+					EndedAt:     &beganAt,
+				}
+
+				// Act
+				res, err := db.IncidentFromAPI(incidentRequest)
+
+				// Assert
+				Ω(err).Should(HaveOccurred())
+				Ω(err).Should(Equal(db.ErrEndsBeforeStart))
+				Ω(res).Should(BeNil())
+			})
+		})
+
+		Context("with valid maintenance window", func() {
+			It("should create an maintenance event", func() {
+				// Arrange
+				incidentRequest := &apiServerDefinition.Incident{
+					Affects: &apiServerDefinition.ImpactComponentList{
+						{
+							Reference: &componentUUID,
+							Type:      &impactTypeUUID,
+							Severity:  test.Ptr(api.MaintenanceSeverity),
+						},
+					},
+					BeganAt:     &beganAt,
+					DisplayName: test.Ptr("Maintenance"),
+					Description: test.Ptr("Maintenance event."),
+					EndedAt:     &endedAt,
+				}
+
+				expectedResult := &db.Incident{
+					DisplayName: test.Ptr("Maintenance"),
+					Description: test.Ptr("Maintenance event."),
+					Affects: &[]db.Impact{
+						{
+							ComponentID:  &componentUUID,
+							ImpactTypeID: &impactTypeUUID,
+							Severity:     test.Ptr(api.MaintenanceSeverity),
+						},
+					},
+					BeganAt: &beganAt,
+					EndedAt: &endedAt,
+				}
+
+				// Act
+				res, err := db.IncidentFromAPI(incidentRequest)
+
+				// Assert
+				Ω(err).ShouldNot(HaveOccurred())
+				Ω(res).Should(Equal(expectedResult))
 			})
 		})
 	})
