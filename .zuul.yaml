@@ -10,6 +10,8 @@
       golangci_lint_version: 1.59.1
       go_version: 1.22.4
       golangci_lint_options: --timeout 5m
+    provides:
+      - lint
 
 - job:
     name: scs-status-page-go-test
@@ -21,17 +23,36 @@
     vars:
       go_command: test ./...
       go_version: 1.22.4
+    requires:
+      - lint
+    provides:
+      - test
 
 - job:
-    name: scs-status-page-go-build
-    parent: golang-go
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    name: scs-status-page-build-container-image
+    parent: scs-build-container-image
+    requires:
+      - test
+    provides:
+      - image
     vars:
-      go_command: build cmd/status-page-api/main.go
-      go_version: 1.22.4
+      container_images: &status-page-build-container-image
+        - context: "."
+          container_filename: Containerfile
+          registry: registry.scs.community
+          repository: registry.scs.community/status-page/status-page-api
+          tags:
+            - latest
+            - "{{ zuul.commit_id }}"
+
+- job:
+    name: scs-status-page-upload-container-image
+    parent: scs-upload-container-image
+    vars:
+      upload_container_image_promote: false
+      container_images: *status-page-build-container-image
+    requires:
+      - image
 
 - project:
     name: SovereignCloudStack/status-page-api
@@ -41,4 +62,7 @@
       jobs:
         - scs-status-page-go-lint
         - scs-status-page-go-test
-        - scs-status-page-go-build
+        - scs-status-page-build-container-image
+    post:
+      jobs:
+        - scs-status-page-upload-container-image
