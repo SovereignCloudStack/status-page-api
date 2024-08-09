@@ -47,6 +47,7 @@
           registry: registry.scs.community
           repository: registry.scs.community/status-page/status-page-api
           tags:
+            - latest
             - "{{ zuul.commit_id }}"
 
 - job:
@@ -54,12 +55,7 @@
     parent: scs-upload-container-image
     vars:
       upload_container_image_promote: false
-      container_images:
-        - context:
-          <<: *status-page-build-container-image
-          tags:
-            - latest
-            - "{{ zuul.commit_id }}"
+      container_images: *status-page-build-container-image
     requires:
       - image
 
