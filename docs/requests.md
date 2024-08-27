@@ -6,7 +6,7 @@ Please refer to [example requests](example-requests.md) to see these request in 
 
 ## Phases
 
-Phases are always handled as lists, so `GET` as well as `POST` operations on phases always require the full list. When geting the phase list, it's accompanied be a generation annotation.
+Phases are always handled as lists, so `GET` as well as `POST` operations on phases always require the full list. When getting the phase list, it's accompanied be a generation annotation.
 
 ```json5
 {
@@ -21,7 +21,7 @@ Phases are always handled as lists, so `GET` as well as `POST` operations on pha
 
 ## Impact types
 
-Requesting (`GET`) an impact type, will return all fields, while `POST` and `PATCH` operations ommit the `id` field.
+Requesting (`GET`) an impact type, will return all fields, while `POST` and `PATCH` operations omit the `id` field.
 
 ```json5
 {
