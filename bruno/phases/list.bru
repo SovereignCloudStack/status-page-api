@@ -1,0 +1,15 @@
+meta {
+  name: Get the current generation list of phases.
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseURL}}/phases
+  body: none
+  auth: none
+}
+
+params:query {
+  ~generation: 1
+}

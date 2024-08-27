@@ -1,0 +1,16 @@
+meta {
+  name: Update a specific update from a specific incident.
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseURL}}/incidents/:incidentId/updates/:updateOrder
+  body: json
+  auth: none
+}
+
+params:path {
+  incidentId: 381ca6b8-73c7-4e1b-beb9-4969755a978c
+  updateOrder: 1
+}

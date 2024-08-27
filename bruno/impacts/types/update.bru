@@ -1,0 +1,22 @@
+meta {
+  name: Update a specific impact type.
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseURL}}/impacttypes/:impactTypeId
+  body: json
+  auth: none
+}
+
+params:path {
+  impactTypeId: b8a52131-4c0b-4225-b8ce-7e58a1fbf57b
+}
+
+body:json {
+  {
+    "description": "Patched desription of the new impact type.",
+    "displayName": "Patched new impact type"
+  }
+}

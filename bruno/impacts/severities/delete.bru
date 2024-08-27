@@ -1,0 +1,15 @@
+meta {
+  name: Delete a specific severity.
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseURL}}/severities/:severityName
+  body: none
+  auth: none
+}
+
+params:path {
+  severityName: limited
+}

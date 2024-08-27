@@ -1,0 +1,21 @@
+meta {
+  name: Create a new generation of the phase list.
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseURL}}/phases
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "phases": [
+      "Phase 1",
+      "Phase 2",
+      "Pahse 3"
+    ]
+  }
+}

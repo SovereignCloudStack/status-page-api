@@ -1,0 +1,20 @@
+meta {
+  name: Create a new component.
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseURL}}/components
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "displayName": "New component",
+    "labels": {
+      "label-key": "label-value"
+    }
+  }
+}

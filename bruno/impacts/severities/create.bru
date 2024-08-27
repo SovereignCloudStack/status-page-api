@@ -1,0 +1,18 @@
+meta {
+  name: Create a new severity.
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseURL}}/severities
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "displayName": "new severity",
+    "value": 15
+  }
+}

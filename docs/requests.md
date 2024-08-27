@@ -1,12 +1,12 @@
 # Requests
 
-As defined by the [OpenAPI spec](https://github.com/SovereignCloudStack/status-page-openapi) and [status page OpenAPI decision](https://github.com/SovereignCloudStack/standards/blob/main/Standards/scs-0402-v1-status-page-openapi-spec-decision.md) the general API objects are used as request bodies and respponses to generalize data structures. Not all object fields are handled by all requests, some are read only and some are write only. `GET` request wrap their return in a object field called `data`.
+As defined by the [OpenAPI spec](https://github.com/SovereignCloudStack/status-page-openapi) and [status page OpenAPI decision](https://github.com/SovereignCloudStack/standards/blob/main/Standards/scs-0402-v1-status-page-openapi-spec-decision.md) the general API objects are used as request bodies and responses to generalize data structures. Not all object fields are handled by all requests, some are read only and some are write only. `GET` request wrap their return in a object field called `data`.
 
 Please refer to [example requests](example-requests.md) to see these request in action.
 
 ## Phases
 
-Phases are always handled as lists, so `GET` as well as `POST` operations on phases always require the full list. When geting the phase list, it's accompanied be a generation annotation.
+Phases are always handled as lists, so `GET` as well as `POST` operations on phases always require the full list. When getting the phase list, it's accompanied be a generation annotation.
 
 ```json5
 {
@@ -21,12 +21,12 @@ Phases are always handled as lists, so `GET` as well as `POST` operations on pha
 
 ## Impact types
 
-Requesting (`GET`) an impact type, will return all fields, while `POST` and `PATCH` operations ommit the `id` field.
+Requesting (`GET`) an impact type, will return all fields, while `POST` and `PATCH` operations omit the `id` field.
 
 ```json5
 {
-  "id": "UUID", // ommit on POST and PATCH
-  "description": "Desription of the impact type.",
+  "id": "UUID", // omit on POST and PATCH
+  "description": "Description of the impact type.",
   "displayName": "Name"
 }
 ```
@@ -50,8 +50,8 @@ When `GET`ing a component, all fields can be expected to be filled, while reques
 
 ```json5
 {
-  "id": "UUID", // ommited on POST and PATCH
-  "activelyAffectedBy": [ // ommited on POST and PATCH
+  "id": "UUID", // omitted on POST and PATCH
+  "activelyAffectedBy": [ // omitted on POST and PATCH
     {
       "reference": "Incident-UUID",
       "severity": 100,
@@ -71,7 +71,7 @@ It is expected that incidents are the most used API object and have the most dat
 
 ```json5
 {
-  "id": "UUID", // ommited on POST and PATCH
+  "id": "UUID", // omitted on POST and PATCH
   "affects": [
     {
       "reference": "Component-UUID",
@@ -87,7 +87,7 @@ It is expected that incidents are the most used API object and have the most dat
     "generation": 1,
     "order": 1
   },
-  "updates": [ // ommited on POST and PATCH
+  "updates": [ // omitted on POST and PATCH
     0,
     1,
     2
@@ -105,7 +105,7 @@ Whenever an incident changes, an update should be issued. When doing a `GET` req
 
 ```json5
 {
-  "order": 0, // ommited on POST and PATCH
+  "order": 0, // omitted on POST and PATCH
   "createdAt": "2024-01-01T06:15:00.000Z",
   "description": "Description of the update.",
   "displayName": "Name"

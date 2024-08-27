@@ -1,0 +1,35 @@
+meta {
+  name: Update an incident.
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseURL}}/incidents/:incidentId
+  body: json
+  auth: none
+}
+
+params:path {
+  incidentId: 381ca6b8-73c7-4e1b-beb9-4969755a978c
+}
+
+body:json {
+  {
+    "affects": [
+      {
+        "reference": "a8cd0403-25a1-455b-a2f5-e5f073ab6765",
+        "severity": 75,
+        "type": "b8a52131-4c0b-4225-b8ce-7e58a1fbf57b"
+      }
+    ],
+    "beganAt": "2024-07-02T13:00:00.000Z",
+    "description": "Patched description of the new incident.",
+    "displayName": "Patched new incident",
+    "endedAt": null,
+    "phase": {
+      "generation": 1,
+      "order": 2
+    }
+  }
+}
