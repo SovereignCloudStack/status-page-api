@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "SCS Status Page API",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

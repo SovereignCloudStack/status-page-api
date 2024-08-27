@@ -1,0 +1,15 @@
+meta {
+  name: Create a new update to a specific incident.
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseURL}}/incidents/:incidentId/updates
+  body: json
+  auth: none
+}
+
+params:path {
+  incidentId: 381ca6b8-73c7-4e1b-beb9-4969755a978c
+}

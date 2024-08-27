@@ -1,0 +1,15 @@
+meta {
+  name: Get a list of updates from a specific incident.
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseURL}}/incidents/:incidentId/updates
+  body: none
+  auth: none
+}
+
+params:path {
+  incidentId: 381ca6b8-73c7-4e1b-beb9-4969755a978c
+}

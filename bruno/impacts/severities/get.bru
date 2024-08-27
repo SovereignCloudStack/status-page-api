@@ -1,0 +1,15 @@
+meta {
+  name: Get a specific severity by its name.
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseURL}}/severities/:severityName
+  body: none
+  auth: none
+}
+
+params:path {
+  severityName: limited
+}

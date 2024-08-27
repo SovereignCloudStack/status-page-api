@@ -1,0 +1,25 @@
+meta {
+  name: Update a component.
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseURL}}/components/:componentId
+  body: json
+  auth: none
+}
+
+params:path {
+  componentId: a8cd0403-25a1-455b-a2f5-e5f073ab6765
+}
+
+body:json {
+  {
+    "displayName": "New component",
+    "labels": {
+      "label-key": "label-value",
+      "patch": "yes"
+    }
+  }
+}

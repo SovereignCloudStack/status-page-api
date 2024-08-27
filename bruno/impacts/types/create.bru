@@ -1,0 +1,18 @@
+meta {
+  name: Create a new impact type.
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseURL}}/impacttypes
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "description": "Desription of the new impact type.",
+    "displayName": "New impact type"
+  }
+}

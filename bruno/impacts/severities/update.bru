@@ -1,0 +1,22 @@
+meta {
+  name: Update a specific severity.
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseURL}}/severities/:severityName
+  body: json
+  auth: none
+}
+
+params:path {
+  severityName: limited
+}
+
+body:json {
+  {
+    "displayName": "better limited",
+    "value": 76
+  }
+}

@@ -1,0 +1,15 @@
+meta {
+  name: Get a specific component by id.
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseURL}}/components/:componentId
+  body: none
+  auth: none
+}
+
+params:path {
+  componentId: a8cd0403-25a1-455b-a2f5-e5f073ab6765
+}
