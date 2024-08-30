@@ -34,9 +34,13 @@ func New(conf *config.Server, logger *zerolog.Logger, promMiddlewareConfig echop
 	echoServer.Use(logging.NewEchoZerlogLogger(logger))
 	echoServer.Use(middleware.Recover())
 	echoServer.Use(middleware.RemoveTrailingSlash())
-	echoServer.Use(middleware.CORSWithConfig(middleware.CORSConfig{ //nolint:exhaustruct
-		AllowOrigins: conf.AllowedOrigins,
-	}))
+
+	if conf.CORS.Enabled {
+		echoServer.Use(middleware.CORSWithConfig(middleware.CORSConfig{ //nolint:exhaustruct
+			AllowOrigins: conf.CORS.AllowedOrigins,
+		}))
+	}
+
 	echoServer.Use(echoprometheus.NewMiddlewareWithConfig(promMiddlewareConfig))
 
 	// open api spec and swagger

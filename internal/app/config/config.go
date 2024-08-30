@@ -22,10 +22,24 @@ func (db Database) isValid() error {
 	return nil
 }
 
+// CORS holds the configuration regarding the CORS settings.
+type CORS struct {
+	AllowedOrigins []string
+	Enabled        bool
+}
+
+func (c CORS) isValid() error {
+	if len(c.AllowedOrigins) == 0 {
+		return ErrNoAllowedOrigins
+	}
+
+	return nil
+}
+
 // Server holds configuration regarding the api server.
 type Server struct {
 	Address        string
-	AllowedOrigins []string
+	CORS           CORS
 	SwaggerEnabled bool
 }
 
@@ -34,8 +48,9 @@ func (s Server) isValid() error {
 		return ErrNoServerAddress
 	}
 
-	if len(s.AllowedOrigins) == 0 {
-		return ErrNoAllowedOrigins
+	err := s.CORS.isValid()
+	if err != nil {
+		return fmt.Errorf("error validating CORS config: %w", err)
 	}
 
 	return nil
@@ -109,11 +124,15 @@ const (
 	metricsAddress          = "metrics.address"
 	metricsAddressDefault   = ""
 
-	serverAddress                 = "server.address"
-	serverAddressDefault          = ":3000"
-	serverAllowedOrigins          = "server.allowed-origins"
+	serverAddress        = "server.address"
+	serverAddressDefault = ":3000"
+
 	serverSwaggerUIEnabled        = "server.swagger.ui.enabled"
 	serverSwaggerUIEnabledDefault = false
+
+	serverCorsEnabled        = "server.cors.enabled"
+	serverCorsEnabledDefault = true
+	serverCorsAllowedOrigins = "server.cors.allowed-origins"
 
 	provisioningFile        = "provisioning-file"
 	provisioningFileDefault = "./provisioning.yaml"
@@ -122,12 +141,10 @@ const (
 	shutdownTimeoutDefault = 10 * time.Second
 )
 
-var serverAllowedOriginsDefault = []string{"127.0.0.1", "localhost"} //nolint:gochecknoglobals
+var serverCorsAllowedOriginsDefault = []string{"http://127.0.0.1", "http://localhost"} //nolint:gochecknoglobals
 
 func setDefaults() {
 	viper.SetDefault(verbose, 0)
-
-	viper.SetDefault(serverSwaggerUIEnabled, serverSwaggerUIEnabledDefault)
 
 	viper.SetDefault(databaseConnectionString, databaseConnectionStringDefault)
 
@@ -136,7 +153,11 @@ func setDefaults() {
 	viper.SetDefault(metricsAddress, metricsAddressDefault)
 
 	viper.SetDefault(serverAddress, serverAddressDefault)
-	viper.SetDefault(serverAllowedOrigins, serverAllowedOriginsDefault)
+
+	viper.SetDefault(serverSwaggerUIEnabled, serverSwaggerUIEnabledDefault)
+
+	viper.SetDefault(serverCorsEnabled, serverCorsEnabledDefault)
+	viper.SetDefault(serverCorsAllowedOrigins, serverCorsAllowedOriginsDefault)
 
 	viper.SetDefault(provisioningFile, provisioningFileDefault)
 
@@ -153,8 +174,11 @@ func setFlags() {
 	pflag.String(metricsAddress, metricsAddressDefault, "Metrics server listen address.")
 
 	pflag.String(serverAddress, serverAddressDefault, "Server listen address.")
-	pflag.StringArray(serverAllowedOrigins, serverAllowedOriginsDefault, "Server CORS origins to accept.")
+
 	pflag.Bool(serverSwaggerUIEnabled, serverSwaggerUIEnabledDefault, "Enable swagger UI for development.")
+
+	pflag.Bool(serverCorsEnabled, serverCorsEnabledDefault, "Server handles CORS.")
+	pflag.StringArray(serverCorsAllowedOrigins, serverCorsAllowedOriginsDefault, "Server CORS origins to accept.")
 
 	pflag.String(provisioningFile, provisioningFileDefault, "YAML file with startup provisioning.")
 
@@ -171,8 +195,11 @@ func buildConfig() *Config {
 			ConnectionString: strings.TrimSpace(viper.GetString(databaseConnectionString)),
 		},
 		Server: Server{
-			Address:        strings.TrimSpace(viper.GetString(serverAddress)),
-			AllowedOrigins: viper.GetStringSlice(serverAllowedOrigins),
+			Address: strings.TrimSpace(viper.GetString(serverAddress)),
+			CORS: CORS{
+				Enabled:        viper.GetBool(serverCorsEnabled),
+				AllowedOrigins: viper.GetStringSlice(serverCorsAllowedOrigins),
+			},
 			SwaggerEnabled: viper.GetBool(serverSwaggerUIEnabled),
 		},
 		Metrics: Metrics{
