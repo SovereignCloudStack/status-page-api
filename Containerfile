@@ -1,4 +1,4 @@
-FROM docker.io/golang:1.22.4-alpine3.20 as builder
+FROM docker.io/golang:1.23.0-alpine3.20 as builder
 
 RUN apk upgrade --no-cache
 

@@ -23,7 +23,6 @@ linters:
     - errorlint
     - exhaustive
     - exhaustruct
-    - exportloopref
     - fatcontext
     # - forbidigo # unused
     - forcetypeassert
