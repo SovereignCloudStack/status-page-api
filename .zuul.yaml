@@ -9,7 +9,7 @@
     vars:
       golangci_lint_version: 1.60.3
       go_version: 1.23.0
-      golangci_lint_options: --timeout 5m
+      golangci_lint_options: --timeout 10m
 
 - job:
     name: scs-status-page-go-test
