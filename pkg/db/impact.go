@@ -36,7 +36,7 @@ func ImpactTypeFromAPI(impactTypeRequest *apiServerDefinition.ImpactType) (*Impa
 // Impact connect a [Incident] with a [Component] and [ImpactType].
 type Impact struct {
 	Incident   *Incident   `gorm:"foreignKey:IncidentID"`
-	Component  *Component  `gorm:"foreignKey:ComponentID;constraint:OnDelete:CASCADE"`
+	Component  *Component  `gorm:"foreignKey:ComponentID"`
 	ImpactType *ImpactType `gorm:"foreignKey:ImpactTypeID"`
 
 	IncidentID   *ID `gorm:"primaryKey"`
