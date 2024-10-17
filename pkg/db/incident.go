@@ -19,7 +19,7 @@ type Incident struct {
 	PhaseGeneration *apiServerDefinition.Incremental
 	PhaseOrder      *apiServerDefinition.Incremental
 	Phase           *Phase            `gorm:"foreignKey:PhaseGeneration,PhaseOrder;References:Generation,Order"`
-	Updates         *[]IncidentUpdate `gorm:"foreignKey:IncidentID"`
+	Updates         *[]IncidentUpdate `gorm:"foreignKey:IncidentID;constraint:OnDelete:CASCADE"`
 	Model           `gorm:"embedded"`
 }
 
