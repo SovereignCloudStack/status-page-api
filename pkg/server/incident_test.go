@@ -96,6 +96,8 @@ var _ = Describe("Incident", func() {
 		// setup database and mock before each test
 		var gormDB *gorm.DB
 
+		gormLogger = test.Ptr(gormLogger.Level(zerolog.Disabled))
+
 		sqlDB, sqlMock, gormDB = test.MustMockGorm(gormLogger)
 		handlers = server.New(gormDB, handlerLogger)
 
@@ -531,6 +533,8 @@ var _ = Describe("Incident", func() {
 		var (
 			ctx echo.Context
 			res *httptest.ResponseRecorder
+
+			expectedIncidentQueryWithTable string
 		)
 
 		BeforeEach(func() {
@@ -543,12 +547,30 @@ var _ = Describe("Incident", func() {
 					DisplayName: test.Ptr("Network impact"),
 				},
 			)
+
+			expectedIncidentQueryWithTable = regexp.
+				QuoteMeta(`SELECT * FROM "incidents" WHERE "incidents"."id" = $1 ORDER BY "incidents"."id" LIMIT $2`)
 		})
 
 		Context("with valid UUID and valid request", func() {
-			It("should return 204 no conntent", func() {
+			It("should return 204 no content", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
+				sqlMock.ExpectQuery(expectedIncidentQueryWithTable).
+					WithArgs(incidentID, 1).
+					WillReturnRows(
+						incidentRows.AddRow(
+							incident.ID,
+							incident.DisplayName,
+							incident.Description,
+							incident.BeganAt,
+							incident.EndedAt,
+							incident.PhaseGeneration,
+							incident.PhaseOrder,
+						),
+					)
+				sqlMock.ExpectQuery(expectedImpactQuery).WillReturnRows(impactRows)
+
 				sqlMock.
 					ExpectExec(expectedIncidentUpdate).
 					WithArgs("Network impact", incidentID).
@@ -588,9 +610,8 @@ var _ = Describe("Incident", func() {
 			It("should return 500 internal server error", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
-				sqlMock.
-					ExpectExec(expectedIncidentUpdate).
-					WithArgs("Network impact", incidentID).
+				sqlMock.ExpectQuery(expectedIncidentQueryWithTable).
+					WithArgs(incidentID, 1).
 					WillReturnError(test.ErrTestError)
 				sqlMock.ExpectRollback()
 
@@ -603,15 +624,16 @@ var _ = Describe("Incident", func() {
 			})
 		})
 
-		Context("without affected rows", func() {
+		Context("without existing incident", func() {
 			It("should return 404 not found", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
-				sqlMock.
-					ExpectExec(expectedIncidentUpdate).
-					WithArgs("Network impact", incidentID).
-					WillReturnResult(sqlmock.NewResult(0, 0))
-				sqlMock.ExpectCommit()
+				sqlMock.ExpectQuery(expectedIncidentQueryWithTable).
+					WithArgs(incidentID, 1).
+					WillReturnRows(
+						incidentRows,
+					)
+				sqlMock.ExpectRollback()
 
 				// Act
 				err := handlers.UpdateIncident(ctx, incidentUUID)

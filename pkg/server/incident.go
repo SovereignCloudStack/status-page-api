@@ -4,9 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	DbDef "github.com/SovereignCloudStack/status-page-api/pkg/db"
 	apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/pkg/api/server"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -164,15 +166,68 @@ func (i *Implementation) GetIncident(ctx echo.Context, incidentID apiServerDefin
 	})
 }
 
+func prepareAffects(oldAffects, newAffects *[]DbDef.Impact, incidentID uuid.UUID, dbTx *gorm.DB) error {
+	// Check if any impacts need deletion.
+	if oldAffects == nil || len(*oldAffects) == 0 {
+		return nil
+	}
+
+	// Check if impacts are modified at all.
+	if newAffects == nil {
+		return nil
+	}
+
+	// Check if any impacts are left.
+	if len(*newAffects) == 0 {
+		// Delete all impacts of this incident.
+		err := dbTx.Delete(oldAffects).Where("incident_id = ?", incidentID).Error
+		if err != nil {
+			return fmt.Errorf("error deleting all incident impacts: %w", err)
+		}
+
+		return nil
+	}
+
+	// Collect all impacts that are expected and give them the incident id.
+	newImpacts := make([]DbDef.Impact, len(*newAffects))
+
+	for incidentImpactIndex := range *newAffects {
+		newImpacts[incidentImpactIndex].IncidentID = &incidentID
+	}
+
+	var impactsToBeDeleted []DbDef.Impact
+
+	for _, oldImpact := range *oldAffects {
+		if !slices.ContainsFunc(newImpacts, func(newImpact DbDef.Impact) bool {
+			return newImpact.ComponentID == oldImpact.ComponentID &&
+				newImpact.ImpactTypeID == oldImpact.ImpactTypeID &&
+				newImpact.IncidentID == oldImpact.IncidentID
+		}) {
+			impactsToBeDeleted = append(impactsToBeDeleted, oldImpact)
+		}
+	}
+
+	err := dbTx.Delete(&impactsToBeDeleted).Error
+	if err != nil {
+		return fmt.Errorf("error deleting not needed impacts: %w", err)
+	}
+
+	return nil
+}
+
 // UpdateIncident handles updates of incidents.
-func (i *Implementation) UpdateIncident(
+func (i *Implementation) UpdateIncident( //nolint: funlen
 	ctx echo.Context,
 	incidentID apiServerDefinition.IncidentIdPathParameter,
 ) error {
 	var request apiServerDefinition.UpdateIncidentJSONRequestBody
 
-	logger := i.logger.With().Str("handler", "UpdateIncident").Interface("id", incidentID).Logger()
+	logger := i.logger.With().
+		Str("handler", "UpdateIncident").
+		Interface("id", incidentID).
+		Logger()
 
+	// Check and validate request.
 	err := ctx.Bind(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error binding request")
@@ -188,28 +243,65 @@ func (i *Implementation) UpdateIncident(
 
 	logger.Debug().Interface("request", request).Send()
 
-	incident, err := DbDef.IncidentFromAPI(&request)
+	// Prepare new incident.
+	newIncident, err := DbDef.IncidentFromAPI(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
 
 		return echo.ErrBadRequest
 	}
 
-	incident.ID = incidentID
+	newIncident.ID = incidentID
 
+	// DB connection.
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Updates(&incident)
-	if res.Error != nil {
-		logger.Error().Err(err).Msg("error updating incident")
+	err = dbSession.Transaction(func(dbTx *gorm.DB) error {
+		// Check if incident exists.
+		var (
+			currentIncident DbDef.Incident
+			transactionErr  error
+		)
 
-		return echo.ErrInternalServerError
-	}
+		currentIncident.ID = newIncident.ID
 
-	if res.RowsAffected == 0 {
-		logger.Warn().Msg("incident not found")
+		transactionErr = dbTx.Preload("Affects").First(&currentIncident).Error
+		if transactionErr != nil {
+			if errors.Is(transactionErr, gorm.ErrRecordNotFound) {
+				logger.Warn().Msg("incident not found")
 
-		return echo.ErrNotFound
+				return echo.ErrNotFound
+			}
+
+			logger.Error().Err(transactionErr).Msg("error loading current incident from database")
+
+			return echo.ErrInternalServerError
+		}
+
+		// Prepare for update.
+		logger.Debug().Interface("currentIncident", currentIncident).Interface("newIncident", newIncident).Send()
+
+		transactionErr = prepareAffects(currentIncident.Affects, newIncident.Affects, newIncident.ID, dbTx)
+		if transactionErr != nil {
+			logger.Error().Err(transactionErr).Msg("error updating affected components")
+
+			return echo.ErrInternalServerError
+		}
+
+		transactionErr = dbTx.Updates(&newIncident).Error
+		if transactionErr != nil {
+			logger.Error().Err(transactionErr).Msg("error updating incident")
+
+			return echo.ErrInternalServerError
+		}
+
+		return nil
+	})
+	if err != nil {
+		logger.Error().Err(err).Msg("error in database transaction")
+
+		// Don't wrap the echo errors.
+		return err //nolint:wrapcheck
 	}
 
 	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck
