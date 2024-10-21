@@ -135,13 +135,16 @@ func (i *Implementation) GetImpactType( //nolint:dupl
 }
 
 // UpdateImpactType handles updates of impact types.
-func (i *Implementation) UpdateImpactType(
+func (i *Implementation) UpdateImpactType( //nolint:funlen
 	ctx echo.Context,
 	impactTypeID apiServerDefinition.ImpactTypeIdPathParameter,
 ) error {
 	var request apiServerDefinition.UpdateImpactTypeJSONRequestBody
 
-	logger := i.logger.With().Str("handler", "UpdateImpactType").Interface("id", impactTypeID).Logger()
+	logger := i.logger.With().
+		Str("handler", "UpdateImpactType").
+		Interface("id", impactTypeID).
+		Logger()
 
 	err := ctx.Bind(&request)
 	if err != nil {
@@ -169,17 +172,38 @@ func (i *Implementation) UpdateImpactType(
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Updates(&impactType)
-	if res.Error != nil {
-		logger.Error().Err(res.Error).Msg("error updating impact type")
+	err = dbSession.Transaction(func(dbTx *gorm.DB) error {
+		// Use echo or http errors, wrapped errors may cause echo to behave strangely.
+		var (
+			dbImpactType     DbDef.ImpactType
+			transactionError error
+		)
 
-		return echo.ErrInternalServerError
-	}
+		dbImpactType.ID = impactType.ID
 
-	if res.RowsAffected == 0 {
-		logger.Warn().Msg("impact type not found")
+		transactionError = dbTx.First(&dbImpactType).Error
+		if errors.Is(transactionError, gorm.ErrRecordNotFound) {
+			logger.Warn().Msg("impact type not found")
 
-		return echo.ErrNotFound
+			return echo.ErrNotFound
+		} else if transactionError != nil {
+			logger.Error().Err(transactionError).Msg("error loading impact type from database")
+
+			return echo.ErrInternalServerError
+		}
+
+		transactionError = dbTx.Updates(&impactType).Error
+		if transactionError != nil {
+			logger.Error().Err(transactionError).Msg("error updating impact type")
+
+			return echo.ErrInternalServerError
+		}
+
+		return nil
+	})
+	if err != nil {
+		// Don't wrap the echo errors.
+		return err //nolint:wrapcheck
 	}
 
 	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck

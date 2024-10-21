@@ -244,14 +244,14 @@ func (i *Implementation) UpdateIncident( //nolint: funlen
 	logger.Debug().Interface("request", request).Send()
 
 	// Prepare new incident.
-	newIncident, err := DbDef.IncidentFromAPI(&request)
+	incident, err := DbDef.IncidentFromAPI(&request)
 	if err != nil {
 		logger.Error().Err(err).Msg("error parsing request")
 
 		return echo.ErrBadRequest
 	}
 
-	newIncident.ID = incidentID
+	incident.ID = incidentID
 
 	// DB connection.
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
@@ -259,13 +259,13 @@ func (i *Implementation) UpdateIncident( //nolint: funlen
 	err = dbSession.Transaction(func(dbTx *gorm.DB) error {
 		// Check if incident exists.
 		var (
-			currentIncident DbDef.Incident
-			transactionErr  error
+			dbIncident     DbDef.Incident
+			transactionErr error
 		)
 
-		currentIncident.ID = newIncident.ID
+		dbIncident.ID = incident.ID
 
-		transactionErr = dbTx.Preload("Affects").First(&currentIncident).Error
+		transactionErr = dbTx.Preload("Affects").First(&dbIncident).Error
 		if transactionErr != nil {
 			if errors.Is(transactionErr, gorm.ErrRecordNotFound) {
 				logger.Warn().Msg("incident not found")
@@ -279,16 +279,16 @@ func (i *Implementation) UpdateIncident( //nolint: funlen
 		}
 
 		// Prepare for update.
-		logger.Debug().Interface("currentIncident", currentIncident).Interface("newIncident", newIncident).Send()
+		logger.Trace().Interface("dbIncident", dbIncident).Interface("incident", incident).Send()
 
-		transactionErr = prepareAffects(currentIncident.Affects, newIncident.Affects, newIncident.ID, dbTx)
+		transactionErr = prepareAffects(dbIncident.Affects, incident.Affects, incident.ID, dbTx)
 		if transactionErr != nil {
 			logger.Error().Err(transactionErr).Msg("error updating affected components")
 
 			return echo.ErrInternalServerError
 		}
 
-		transactionErr = dbTx.Updates(&newIncident).Error
+		transactionErr = dbTx.Updates(&incident).Error
 		if transactionErr != nil {
 			logger.Error().Err(transactionErr).Msg("error updating incident")
 
@@ -298,8 +298,6 @@ func (i *Implementation) UpdateIncident( //nolint: funlen
 		return nil
 	})
 	if err != nil {
-		logger.Error().Err(err).Msg("error in database transaction")
-
 		// Don't wrap the echo errors.
 		return err //nolint:wrapcheck
 	}
