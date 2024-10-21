@@ -45,11 +45,12 @@ var _ = Describe("Impact", Ordered, func() {
 		handlers *server.Implementation
 
 		// expected SQL
-		expectedImpactTypesQuery = regexp.QuoteMeta(`SELECT * FROM "impact_types"`)
-		expectedImpactTypeQuery  = regexp.QuoteMeta(`SELECT * FROM "impact_types" WHERE id = $1 ORDER BY "impact_types"."id" LIMIT $2`) //nolint:lll
-		expectedImpactTypeInsert = regexp.QuoteMeta(`INSERT INTO "impact_types" ("display_name","description","id") VALUES ($1,$2,$3)`) //nolint:lll
-		expectedImpactTypeDelete = regexp.QuoteMeta(`DELETE FROM "impact_types" WHERE id = $1`)
-		expectedImpactTypeUpdate = regexp.QuoteMeta(`UPDATE "impact_types" SET "display_name"=$1 WHERE "id" = $2`)
+		expectedImpactTypesQuery         = regexp.QuoteMeta(`SELECT * FROM "impact_types"`)
+		expectedImpactTypeQuery          = regexp.QuoteMeta(`SELECT * FROM "impact_types" WHERE id = $1 ORDER BY "impact_types"."id" LIMIT $2`)                  //nolint:lll
+		expectedImpactTypeQueryWithTable = regexp.QuoteMeta(`SELECT * FROM "impact_types" WHERE "impact_types"."id" = $1 ORDER BY "impact_types"."id" LIMIT $2`) //nolint:lll
+		expectedImpactTypeInsert         = regexp.QuoteMeta(`INSERT INTO "impact_types" ("display_name","description","id") VALUES ($1,$2,$3)`)                  //nolint:lll
+		expectedImpactTypeDelete         = regexp.QuoteMeta(`DELETE FROM "impact_types" WHERE id = $1`)
+		expectedImpactTypeUpdate         = regexp.QuoteMeta(`UPDATE "impact_types" SET "display_name"=$1 WHERE "id" = $2`)
 
 		// UUID of the test impact type
 		impactTypeUUID = uuid.MustParse(impactTypeID)
@@ -387,9 +388,19 @@ var _ = Describe("Impact", Ordered, func() {
 		})
 
 		Context("with valid UUID and valid request", func() {
-			It("should return 204 no conntent", func() {
+			It("should return 204 no content", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
+				sqlMock.
+					ExpectQuery(expectedImpactTypeQueryWithTable).
+					WithArgs(impactTypeID, 1).
+					WillReturnRows(
+						impactTypeRows.AddRow(
+							impactType.ID,
+							impactType.DisplayName,
+							impactType.Description,
+						),
+					)
 				sqlMock.
 					ExpectExec(expectedImpactTypeUpdate).
 					WithArgs("Connectivity problems", impactTypeID).
@@ -430,8 +441,8 @@ var _ = Describe("Impact", Ordered, func() {
 				// Arrange
 				sqlMock.ExpectBegin()
 				sqlMock.
-					ExpectExec(expectedImpactTypeUpdate).
-					WithArgs("Connectivity problems", impactTypeID).
+					ExpectQuery(expectedImpactTypeQueryWithTable).
+					WithArgs(impactTypeID, 1).
 					WillReturnError(test.ErrTestError)
 				sqlMock.ExpectRollback()
 
@@ -444,15 +455,15 @@ var _ = Describe("Impact", Ordered, func() {
 			})
 		})
 
-		Context("without affected rows", func() {
+		Context("without existing impact type", func() {
 			It("should return 404 not found", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
 				sqlMock.
-					ExpectExec(expectedImpactTypeUpdate).
-					WithArgs("Connectivity problems", impactTypeID).
-					WillReturnResult(sqlmock.NewResult(0, 0))
-				sqlMock.ExpectCommit()
+					ExpectQuery(expectedImpactTypeQueryWithTable).
+					WithArgs(impactTypeID, 1).
+					WillReturnRows(impactTypeRows)
+				sqlMock.ExpectRollback()
 
 				// Act
 				err := handlers.UpdateImpactType(ctx, impactTypeUUID)

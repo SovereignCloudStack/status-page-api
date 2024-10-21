@@ -152,7 +152,7 @@ func (i *Implementation) GetComponent(
 }
 
 // UpdateComponent handles updates of components.
-func (i *Implementation) UpdateComponent(
+func (i *Implementation) UpdateComponent( //nolint: funlen
 	ctx echo.Context,
 	componentID apiServerDefinition.ComponentIdPathParameter,
 ) error {
@@ -186,17 +186,38 @@ func (i *Implementation) UpdateComponent(
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Updates(component)
-	if res.Error != nil {
-		logger.Error().Err(res.Error).Msg("error updating component")
+	err = dbSession.Transaction(func(dbTx *gorm.DB) error {
+		// Use echo or http errors, wrapped errors may cause echo to behave strangely.
+		var (
+			dbComponent      DbDef.Component
+			transactionError error
+		)
 
-		return echo.ErrInternalServerError
-	}
+		dbComponent.ID = component.ID
 
-	if res.RowsAffected == 0 {
-		logger.Warn().Msg("component not found")
+		transactionError = dbTx.First(&dbComponent).Error
+		if errors.Is(transactionError, gorm.ErrRecordNotFound) {
+			logger.Warn().Msg("component not found")
 
-		return echo.ErrNotFound
+			return echo.ErrNotFound
+		} else if transactionError != nil {
+			logger.Error().Err(transactionError).Msg("error loading component from database")
+
+			return echo.ErrInternalServerError
+		}
+
+		transactionError = dbTx.Updates(component).Error
+		if transactionError != nil {
+			logger.Error().Err(transactionError).Msg("error updating component")
+
+			return echo.ErrInternalServerError
+		}
+
+		return nil
+	})
+	if err != nil {
+		// Don't wrap the echo errors.
+		return err //nolint:wrapcheck
 	}
 
 	return ctx.NoContent(http.StatusNoContent) //nolint:wrapcheck
