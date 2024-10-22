@@ -96,7 +96,7 @@ var _ = Describe("Incident", func() {
 		// setup database and mock before each test
 		var gormDB *gorm.DB
 
-		gormLogger = test.Ptr(gormLogger.Level(zerolog.Disabled))
+		gormLogger = test.Ptr(gormLogger.Level(zerolog.TraceLevel))
 
 		sqlDB, sqlMock, gormDB = test.MustMockGorm(gormLogger)
 		handlers = server.New(gormDB, handlerLogger)

@@ -56,6 +56,13 @@ var _ = Describe("Component", Ordered, func() {
 			ORDER BY "components"."id"
 			LIMIT $2`,
 		)
+		expectedComponentQueryWithTable = regexp.QuoteMeta(
+			`SELECT *
+			FROM "components"
+			WHERE "components"."id" = $1
+			ORDER BY "components"."id"
+			LIMIT $2`,
+		)
 		expectedComponentInsert = regexp.QuoteMeta(
 			`INSERT INTO "components" ("display_name","labels","id")
 			VALUES ($1,$2,$3)`,
@@ -498,9 +505,19 @@ var _ = Describe("Component", Ordered, func() {
 		})
 
 		Context("with valid UUID and valid request", func() {
-			It("should return 204 no conntent", func() {
+			It("should return 204 no content", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
+				sqlMock.
+					ExpectQuery(expectedComponentQueryWithTable).
+					WithArgs(componentID, 1).
+					WillReturnRows(
+						componentRows.AddRow(
+							component.ID,
+							component.DisplayName,
+							component.Labels,
+						),
+					)
 				sqlMock.
 					ExpectExec(expectedComponentUpdate).
 					WithArgs("Network", componentID).
@@ -541,8 +558,8 @@ var _ = Describe("Component", Ordered, func() {
 				// Arrange
 				sqlMock.ExpectBegin()
 				sqlMock.
-					ExpectExec(expectedComponentUpdate).
-					WithArgs("Network", componentID).
+					ExpectQuery(expectedComponentQueryWithTable).
+					WithArgs(componentID, 1).
 					WillReturnError(test.ErrTestError)
 				sqlMock.ExpectRollback()
 
@@ -555,15 +572,16 @@ var _ = Describe("Component", Ordered, func() {
 			})
 		})
 
-		Context("without affected rows", func() {
+		Context("without existing component", func() {
 			It("should return 404 not found", func() {
 				// Arrange
 				sqlMock.ExpectBegin()
-				sqlMock.
-					ExpectExec(expectedComponentUpdate).
-					WithArgs("Network", componentID).
-					WillReturnResult(sqlmock.NewResult(0, 0))
-				sqlMock.ExpectCommit()
+				sqlMock.ExpectQuery(expectedComponentQueryWithTable).
+					WithArgs(componentID, 1).
+					WillReturnRows(
+						componentRows,
+					)
+				sqlMock.ExpectRollback()
 
 				// Act
 				err := handlers.UpdateComponent(ctx, componentUUID)
