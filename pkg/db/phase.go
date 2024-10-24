@@ -4,7 +4,7 @@ import apiServerDefinition "github.com/SovereignCloudStack/status-page-openapi/p
 
 // Phase represents a state of an incident on a moving scale to resolution of the incident.
 type Phase struct {
-	Name       *apiServerDefinition.Phase       `yaml:"name"`
+	Name       *apiServerDefinition.Phase       `gorm:"not null"   yaml:"name"`
 	Generation *apiServerDefinition.Incremental `gorm:"primaryKey"`
 	Order      *apiServerDefinition.Incremental `gorm:"primaryKey"`
 }
