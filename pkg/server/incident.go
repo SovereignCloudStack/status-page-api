@@ -68,7 +68,7 @@ func (i *Implementation) GetIncidents(ctx echo.Context, params apiServerDefiniti
 }
 
 // CreateIncident handles creation of incidents.
-func (i *Implementation) CreateIncident(ctx echo.Context) error {
+func (i *Implementation) CreateIncident(ctx echo.Context) error { //nolint: funlen
 	var request apiServerDefinition.CreateIncidentJSONRequestBody
 
 	logger := i.logger.With().Str("handler", "CreateIncident").Logger()
@@ -97,11 +97,41 @@ func (i *Implementation) CreateIncident(ctx echo.Context) error {
 
 	dbSession := i.dbCon.WithContext(ctx.Request().Context())
 
-	res := dbSession.Create(incident)
-	if res.Error != nil {
-		logger.Error().Err(res.Error).Msg("error creating incident")
+	err = dbSession.Transaction(func(dbTx *gorm.DB) error {
+		var (
+			transactionErr error
+			dbPhase        DbDef.Phase
+		)
 
-		return echo.ErrInternalServerError
+		// Check phase validity
+		if incident.Phase != nil {
+			dbPhase.Generation = incident.Phase.Generation
+			dbPhase.Order = incident.Phase.Order
+
+			transactionErr = dbTx.First(&dbPhase).Error
+			if errors.Is(transactionErr, gorm.ErrRecordNotFound) {
+				logger.Warn().Msg("invalid phase for incident")
+
+				return echo.ErrBadRequest
+			} else if transactionErr != nil {
+				logger.Error().Err(transactionErr).Msg("error loading phase from database")
+
+				return echo.ErrInternalServerError
+			}
+		}
+
+		transactionErr = dbTx.Create(incident).Error
+		if transactionErr != nil {
+			logger.Error().Err(transactionErr).Msg("error creating incident")
+
+			return echo.ErrInternalServerError
+		}
+
+		return nil
+	})
+	if err != nil {
+		// Don't wrap the echo errors.
+		return err //nolint:wrapcheck
 	}
 
 	return ctx.JSON(http.StatusCreated, apiServerDefinition.IdResponse{ //nolint:wrapcheck
