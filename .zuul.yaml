@@ -1,4 +1,5 @@
 ---
+# Go jobs
 - job:
     name: scs-status-page-go-lint
     parent: golangci-lint
@@ -16,15 +17,9 @@
       go_command: test ./...
       go_version: 1.23.0
 
+# Container jobs
 - job:
-    name: scs-status-page-go-build
-    parent: golang-go
-    nodeset: pod-fedora-40
-    vars:
-      go_command: build cmd/status-page-api/main.go
-      go_version: 1.23.0
-
-- job:
+    # Build speculative container to check changes.
     name: scs-status-page-build-container-image
     parent: scs-build-container-image
     vars:
@@ -33,17 +28,21 @@
           container_filename: Containerfile
           registry: registry.scs.community
           repository: registry.scs.community/status-page/status-page-api
-          tags:
-            - latest
-            - "{{ zuul.commit_id }}"
 
 - job:
+    # Build and upload container to registry.
     name: scs-status-page-upload-container-image
     parent: scs-upload-container-image
     vars:
       upload_container_image_promote: false
-      container_images: *status-page-build-container-image
+      container_images:
+        <<: *status-page-build-container-image
+        tags:
+          - latest
+          - "{{ zuul.tag }}"
 
+
+# Project settings
 - project:
     name: SovereignCloudStack/status-page-api
     merge-mode: squash-merge
@@ -53,6 +52,6 @@
         - scs-status-page-go-lint
         - scs-status-page-go-test
         - scs-status-page-build-container-image
-    post:
+    tag:
       jobs:
         - scs-status-page-upload-container-image
