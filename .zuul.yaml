@@ -2,10 +2,7 @@
 - job:
     name: scs-status-page-go-lint
     parent: golangci-lint
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    nodeset: pod-fedora-40
     vars:
       golangci_lint_version: 1.60.3
       go_version: 1.23.0
@@ -14,10 +11,7 @@
 - job:
     name: scs-status-page-go-test
     parent: golang-go
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    nodeset: pod-fedora-40
     vars:
       go_command: test ./...
       go_version: 1.23.0
@@ -25,10 +19,7 @@
 - job:
     name: scs-status-page-go-build
     parent: golang-go
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    nodeset: pod-fedora-40
     vars:
       go_command: build cmd/status-page-api/main.go
       go_version: 1.23.0
