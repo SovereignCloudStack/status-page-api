@@ -1,11 +1,9 @@
 ---
+# Go jobs
 - job:
     name: scs-status-page-go-lint
     parent: golangci-lint
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    nodeset: pod-fedora-40
     vars:
       golangci_lint_version: 1.60.3
       go_version: 1.23.0
@@ -14,25 +12,37 @@
 - job:
     name: scs-status-page-go-test
     parent: golang-go
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    nodeset: pod-fedora-40
     vars:
       go_command: test ./...
       go_version: 1.23.0
 
+# Container jobs
 - job:
-    name: scs-status-page-go-build
-    parent: golang-go
-    nodeset:
-      nodes:
-        - name: ubuntu-jammy
-          label: ubuntu-jammy
+    # Build speculative container to check changes.
+    name: scs-status-page-build-container-image
+    parent: scs-build-container-image
     vars:
-      go_command: build cmd/status-page-api/main.go
-      go_version: 1.23.0
+      container_images: &status-page-build-container-image
+        - context: "."
+          container_filename: Containerfile
+          registry: registry.scs.community
+          repository: registry.scs.community/status-page/status-page-api
 
+- job:
+    # Build and upload container to registry.
+    name: scs-status-page-upload-container-image
+    parent: scs-upload-container-image
+    vars:
+      upload_container_image_promote: false
+      container_images:
+        <<: *status-page-build-container-image
+        tags:
+          - latest
+          - "{{ zuul.tag }}"
+
+
+# Project settings
 - project:
     name: SovereignCloudStack/status-page-api
     merge-mode: squash-merge
@@ -41,4 +51,7 @@
       jobs:
         - scs-status-page-go-lint
         - scs-status-page-go-test
-        - scs-status-page-go-build
+        - scs-status-page-build-container-image
+    tag:
+      jobs:
+        - scs-status-page-upload-container-image
