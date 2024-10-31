@@ -36,10 +36,6 @@
 - job:
     name: scs-status-page-build-container-image
     parent: scs-build-container-image
-    requires:
-      - test
-    provides:
-      - image
     vars:
       container_images: &status-page-build-container-image
         - context: "."
@@ -56,8 +52,6 @@
     vars:
       upload_container_image_promote: false
       container_images: *status-page-build-container-image
-    requires:
-      - image
 
 - project:
     name: SovereignCloudStack/status-page-api
