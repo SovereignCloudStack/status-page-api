@@ -1,6 +1,6 @@
 module github.com/SovereignCloudStack/status-page-api
 
-go 1.23.0
+go 1.23.3
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
