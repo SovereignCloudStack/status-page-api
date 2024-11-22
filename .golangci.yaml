@@ -51,6 +51,7 @@ linters:
     - gosmopolitan
     - govet
     - grouper
+    - iface
     - importas
     - inamedparam
     - ineffassign
@@ -81,6 +82,7 @@ linters:
     - promlinter
     - protogetter
     - reassign
+    - recvcheck
     - revive
     - rowserrcheck
     - sloglint
@@ -123,7 +125,7 @@ issues:
     - EXC0012
     - EXC0014
   exclude-rules:
-    - path: _test.go
+    - path: _test\.go
       linters:
         - revive
       text: "dot-imports:"
